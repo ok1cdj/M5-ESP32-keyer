@@ -19,8 +19,12 @@ Features:
   
    CW output is on G26 - connect optocoupler or transistor for keying and connect radio
    UDP server listen on 6789
+   
    WEB http://url/?apikey=XXXXXXXX when button A is pressed QR code with url is displayed
+   
    Config - http://url/cfg or hold button B on start when button A is pressed QR code with url is displayed
+   
+   
    API http://url/sendmorse?apikey=XXXXXX&message=ok1cdj&speed=33
 
   TODO:
