@@ -1,0 +1,44 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Remote CW Keyer by @OK1CDJ</title>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+</head>
+<body>
+
+<div class="d-flex justify-content-center m-md-5">
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h1>Remote CW Keyer</h1>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="/cfg-save" id="form">
+                <div class="form-group">
+                    <label for="apikey">Api key</label>
+                    <input type="text" id="apikey" class="form-control" name="apikey" value="%APIKEY%">
+                </div>
+
+                <div class="form-group">
+                    <label for="ssid">SSID</label>
+                    <select class="form-select" id="ssid" name="ssid" aria-label="SSID select">
+                        %NETWORKS%
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-control" name="password">
+                </div>
+                <input type="submit" value="Save" class="btn btn-primary m-3">
+		<input type="button" value="Cancel" class="btn btn-warning m-3" onclick="location.href='/';">
+            </form>
+        </div>
+    </div>
+</div>
+
+<footer class="d-flex justify-content-center m-5">
+    &copy;OK1CDJ<a href="https://hamshop.cz" class="px-1">hamshop.cz</a>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,53 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Remote CW Keyer by OK1CDJ</title>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+    <script type="text/javascript">
+        function submitByButton() {
+            document.getElementById('message').value = '';
+            document.getElementById('form').submit();
+        }
+
+    </script>
+</head>
+<body>
+
+
+<div class="d-flex justify-content-center m-md-5">
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h1>Remote CW Keyer</h1>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="/" id="form">
+		<input type="hidden" class="form-control" id="apikey" name="apikey" value="%APIKEY%">	
+                <div class="form-group">
+                    <label for="message">Text</label>
+                    <input type="text" class="form-control" id="message" name="message">
+                </div>
+                <div class="form-group">
+                    <label for="speed" class="form-label">Speed</label>
+                    <div class="d-flex w-100 align-items-center">
+                        <input type="range" class="form-range" id="speed" name="speed" min="10" max="40" value="%SPEED%"
+                               step="1"
+                               onchange="document.getElementById('sped-value').innerHTML = value + ''">
+                        <span class="p-1" id="sped-value">%SPEED%</span>WPM
+                    </div>
+                </div>
+                <div class="d-flex justify-content-center m-2">
+                    <input type="submit" value="Send" class="btn btn-primary m-3">
+                    <input type="button" value="Break" class="btn btn-warning m-3" onclick="submitByButton()">
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<footer class="d-flex justify-content-center m-5">
+    &copy; OK1CDJ<a href="https://hamshop.cz" class="px-1">hamshop.cz</a>
+</footer>
+
+</body>
+</html>
