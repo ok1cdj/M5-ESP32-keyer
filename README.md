@@ -2,7 +2,9 @@
 
 **M5StickC** - ESP32 remote CW keyer by OK1CDJ ondra@ok1cdj.com 
 
-Primary desiged for M5StickC but can be used with any ESP32 board
+Primary desiged for M5StickC but can be used with **any ESP32 board**
+
+ ![GitHub Logo](https://raw.githubusercontent.com/ok1cdj/M5-ESP32-keyer/master/M5StickC-key.png)
 
 If you wold like try another ESP32 board emove #define M5Stick and correct Pin assigment
 
