@@ -1,5 +1,5 @@
 /*
-  M5StickC - ESP32 remote CW keyer by OK1CDJ ondra@ok1cdj.com 
+  M5StickC - ESP32 remote CW keyer by OK1CDJ ondra@ok1cdj.com
   -----------------------------------------------------------
   Primary desiged for M5StickC but can be used with any ESP32 board
   If you wold like try another ESP32 board emove #define M5Stick and correct Pin assigment
@@ -356,7 +356,7 @@ void setup() {
   Serial.begin(115200);
   Serial.println(hMessage);
 
-  
+
   if (!SPIFFS.begin()) {
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
@@ -537,9 +537,8 @@ void setup() {
             bb[1] = packet.data()[3];
             speed = atoi(bb);
             update_speed();
-            Serial.print("speed:");
-            Serial.println(speed);
             break;
+            
           default:
             break;
         }
@@ -558,7 +557,7 @@ void setup() {
 int i;
 void loop() {
 #ifdef M5Stick
-  
+
   M5.Lcd.setCursor(0, 0);
   M5.Lcd.println(hMessage);
   M5.Lcd.println();
@@ -574,20 +573,20 @@ void loop() {
   if (M5.BtnA.wasReleased()) {
     M5.Lcd.fillRect(0, 0, 160, 80, 0);
     if (wifiConfigRequired) {
-        String url = "http://"; 
-        url+=IP.toString();
-        url+="/cfg";
-        M5.Lcd.qrcode(url,0,0,80, 2);
+      String url = "http://";
+      url += IP.toString();
+      url += "/cfg";
+      M5.Lcd.qrcode(url, 0, 0, 80, 2);
       delay(10000);
     }
     else {
-     String url = "http://"; 
-     url+=IP.toString();
-     url+="/?akpikey="+apikey;
-     M5.Lcd.qrcode(url,0,0,80, 2);
-     delay(10000);
+      String url = "http://";
+      url += IP.toString();
+      url += "/?akpikey=" + apikey;
+      M5.Lcd.qrcode(url, 0, 0, 80, 2);
+      delay(10000);
     }
-  M5.Lcd.fillRect(0, 0, 160, 80, 0);  
+    M5.Lcd.fillRect(0, 0, 160, 80, 0);
   }
 
   M5.update();
