@@ -163,6 +163,7 @@ extern const unsigned char bat2_icon16x16[];
 extern const unsigned char bat3_icon16x16[];
 extern const unsigned char bat4_icon16x16[];
 extern const unsigned char plug_icon16x16[];
+extern const unsigned char wifi1_icon16x16[];
 
 // Routines to output a dahs and dit
 
@@ -568,6 +569,10 @@ void loop() {
   M5.Lcd.fillRect(0, 35, 160, 25, 0);
   M5.Lcd.println();
   M5.Lcd.println(message);
+  M5.Lcd.setCursor(0, 60);
+  M5.Lcd.print("SPEED: ");
+  M5.Lcd.println(sspeed);
+  drawIcon(120,60, (uint8_t*)wifi1_icon16x16, WHITE);
   getBatteryLevel();
   drawBatteryStatus(140, 60);
   if (M5.BtnA.wasReleased()) {
