@@ -19,9 +19,8 @@
         </div>
         <div class="card-body">
             <form method="GET" action="/cfg-save" id="form">
-                <div class="form-group">
-			<input type="checkbox" checked data-toggle="toggle" data-on="DHCP ON" data-off="DHCP OFF" data-onstyle="success" data-offstyle="danger">
-
+                    <input type="checkbox" checked data-toggle="toggle" data-on="DHCP ON" data-off="DHCP OFF" data-onstyle="success" data-offstyle="danger">
+		</div>
                     <label for="localip">IP Adress</label>
                     <input type="text" id="localip" class="form-control" name="localip" value="%LOCALIP%">
                 </div>
@@ -41,7 +40,8 @@
                     <label for="sdns">Secondary DNS</label>
                     <input type="text" id="sdns" class="form-control" name="sdns" value="%SDNS%">
                 </div>
-
+		 <input type="checkbox" checked data-toggle="toggle" data-on="WiFi" data-off="Ethernet" data-onstyle="success" data-offstyle="danger">
+	      </div>
                 <div class="form-group">
                     <label for="ssid">SSID</label>
                     <select class="form-select" id="ssid" name="ssid" aria-label="SSID select">
