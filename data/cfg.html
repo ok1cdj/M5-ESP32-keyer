@@ -19,20 +19,21 @@
         </div>
 
         <div class="card-body">
-            <form method="GET" action="/cfg-save" id="form">
+            <form class="needs-validation" method="GET" action="/cfg-save" id="form" novalidate>
 
 		    <div class="form-check">
-                    <input type="checkbox" checked data-toggle="toggle" data-on="DHCP ON" data-off="DHCP OFF" data-onstyle="success" data-offstyle="danger">
+                    <input type="checkbox" id="wifi" name="wifi" checked data-toggle="toggle" data-on="DHCP ON" data-off="DHCP OFF" data-onstyle="success" data-offstyle="danger" onchange="dhcpChange()" >
 		    <small id="emailHelp" class="form-text text-muted">Switch between DHCP and Static IP</small>
 		</div>
 		    <div class="form-group">
                     <label for="localip">IP Address</label>
-                    <input type="text" id="localip" class="form-control" name="localip" value="%LOCALIP%">
-		    	
+                    <input type="text" id="localip" class="form-control" name="localip" value="%LOCALIP%" required >
+		    <div class="invalid-feedback">Insert valid IP address</div>	
                 </div>
 		    <div class="form-group">
                     <label for="subnet">Subnet Mask</label>
                     <input type="text" id="subnet" class="form-control" name="subnet" value="%SUBNET%">
+		    <div class="invalid-feedback">Insert valid Subnet Mask</div>		
                 </div>
 		    <div class="form-group">
                     <label for="gateway">Deafult Gateway</label>
@@ -47,7 +48,7 @@
                     <input type="text" id="sdns" class="form-control" name="sdns" value="%SDNS%">
                 </div>
 		    <div class="form-check">
-		    <input type="checkbox" checked data-toggle="toggle" data-on="WiFi" data-off="Ethernet" data-onstyle="success" data-offstyle="danger">
+		    <input type="checkbox" id="con" name="con" checked data-toggle="toggle" data-on="WiFi" data-off="Ethernet" data-onstyle="success" data-offstyle="danger" onchange="conChange()">
 		    <small id="emailHelp" class="form-text text-muted">Switch between WiFi and Ethernet</small>
 	      </div>
                      <div class="form-group">
@@ -58,7 +59,7 @@
                 </div>
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" class="form-control" name="password" disabled>
+                    <input type="password" id="password" class="form-control" name="password">
                 </div>
 		  <div class="d-flex justify-content-center m-2">	
                 <input type="submit" value="Save" class="btn btn-primary m-3">
@@ -74,6 +75,36 @@
 </footer>
 <script> 
         $('input[name="localip"]').mask('099.099.099.099'); 
-    </script> 
+</script>
+<script> 
+(() => {
+  'use strict';
+
+  // Fetch all the forms we want to apply custom Bootstrap validation styles to
+  const forms = document.querySelectorAll('.needs-validation');
+
+  // Loop over them and prevent submission
+  Array.prototype.slice.call(forms).forEach((form) => {
+    form.addEventListener('submit', (event) => {
+      if (!form.checkValidity()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      form.classList.add('was-validated');
+    }, false);
+  });
+})(); 
+
+function dhcpChange() 
+{
+	document.getElementById('localip').disabled = document.getElementById('wifi').checked;
+}
+function conChange() 
+{
+	document.getElementById('ssid').disabled = !document.getElementById('con').checked;
+	document.getElementById('password').disabled = !document.getElementById('con').checked;
+}
+
+</script>
 </body>
 </html>
