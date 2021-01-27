@@ -18,6 +18,8 @@
         <div class="card-body">
             <form method="GET" action="/cfg-save" id="form">
                 <div class="form-group">
+			<input type="checkbox" checked data-toggle="toggle" data-on="DHCP ON" data-off="DHCP OFF" data-onstyle="success" data-offstyle="danger">
+
                     <label for="localip">IP Adress</label>
                     <input type="text" id="localip" class="form-control" name="localip" value="%LOCALIP%">
                 </div>
