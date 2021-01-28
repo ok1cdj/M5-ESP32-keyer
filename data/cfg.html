@@ -22,7 +22,7 @@
             <form class="needs-validation" method="GET" action="/cfg-save" id="form" novalidate>
 
                 <div class="form-check form-check-inline p-0">
-                    <input id="wifi" name="wifi" class="form-check-input" type="checkbox" data-toggle="toggle"
+                    <input id="wifi" name="wifi" class="form-check-input" type="checkbox" data-toggle="toggle" data-size="small"
                            data-on="DHCP ON" data-off="DHCP OFF" data-onstyle="success" data-offstyle="secondary"
                            onchange="dhcpChange()" checked>
                     <label for="wifi" class="form-check-label text-muted">Switch between DHCP and Static IP</label>
@@ -50,10 +50,10 @@
                     <input type="text" id="sdns" class="form-control" name="sdns" value="%SDNS%">
                 </div>
                 <div class="form-check form-check-inline p-0 mt-2">
-                    <input id="con" name="con" class="form-check-input" type="checkbox" data-toggle="toggle"
+                    <input id="con" name="con" class="form-check-input" type="checkbox" data-toggle="toggle" data-size="small"
                            data-on="WiFi" data-off="Ethernet" data-onstyle="warning" data-offstyle="primary"
                            onchange="conChange()" checked>
-                    <label for="con" class="form-check-label text-muted">Switch between WiFi and Etherne</label>
+                    <label for="con" class="form-check-label text-muted">Switch between WiFi and Ethernet</label>
                 </div>
 
                 <div class="form-group">
@@ -80,20 +80,15 @@
 </footer>
 <script>
     $('input[name="localip"]').mask('099.099.099.099');
-</script>
-    <script>
+
     $('input[name="subnet"]').mask('099.099.099.099');
-</script>
-    <script>
+
     $('input[name="gateway"]').mask('099.099.099.099');
- </script>
-    <script>
+
     $('input[name="pdns"]').mask('099.099.099.099');
- </script>
-      <script>
+
     $('input[name="sdns"]').mask('099.099.099.099');
- </script>
-<script>
+ 
     (() => {
         'use strict';
 
