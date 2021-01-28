@@ -81,6 +81,12 @@
 <script>
     $('input[name="localip"]').mask('099.099.099.099');
 </script>
+    <script>
+    $('input[name="subnet"]').mask('099.099.099.099');
+</script>
+    <script>
+    $('input[name="gateway"]').mask('099.099.099.099');
+</script>
 <script>
     (() => {
         'use strict';
@@ -102,6 +108,10 @@
 
     function dhcpChange() {
         document.getElementById('localip').disabled = document.getElementById('wifi').checked;
+        document.getElementById('subnet').disabled = document.getElementById('wifi').checked;
+        document.getElementById('gateway').disabled = document.getElementById('wifi').checked;
+        document.getElementById('pdns').disabled = document.getElementById('wifi').checked;
+        document.getElementById('sdns').disabled = document.getElementById('wifi').checked;
     }
 
     function conChange() {
