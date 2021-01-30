@@ -71,6 +71,8 @@ const char* PARAM_SPEED = "speed";
 const char* PARAM_SSID = "ssid";
 const char* PARAM_PASSWORD = "password";
 const char* PARAM_APIKEY = "apikey";
+const char* PARAM_WIFI = "wifi";
+const char* PARAM_CON = "con";
 
 // CW variables
 String message;
@@ -460,16 +462,17 @@ void setup() {
   });
   server.on("/cfg-save", HTTP_GET, [](AsyncWebServerRequest * request)
   {
-    if (request->hasParam("ssid") && request->hasParam("password")) {
+   if (request->hasParam("ssid") && request->hasParam("password")) {
       ssid = request->getParam(PARAM_SSID)->value();
       password = request->getParam(PARAM_PASSWORD)->value();
-      apikey = request->getParam(PARAM_APIKEY)->value();
+      //apikey = request->getParam(PARAM_APIKEY)->value();
       savePrefs();
       request->send(200, "text/plain", "Config saved - SSID:" + ssid + " APIKEY: " + apikey + " rest in 5 seconds");
+      delay(5000);
       ESP.restart();
       //request->redirect("/");
     }
-    else
+    else 
       request->send(400, "text/plain", "Missing required parameters");
   });
 
@@ -492,13 +495,32 @@ void setup() {
 
   });
 
-  server.on("/css/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(SPIFFS, "/css/bootstrap.bundle.min.js", "text/javascript");
+  server.on("/js/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send(SPIFFS, "/js/bootstrap.bundle.min.js", "text/javascript");
   });
 
-  server.on("/css/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+   server.on("/js/bootstrap4-toggle.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send(SPIFFS, "/js/bootstrap4-toggle.min.js", "text/css");
+  });
+
+  
+  server.on("/js/jquery.mask.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send(SPIFFS, "/js/jquery.mask.min.js", "text/css");
+  });
+
+  server.on("/js/jquery-3.5.1.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send(SPIFFS, "/js/jquery-3.5.1.min.js", "text/css");
+  });
+
+   server.on("/css/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send(SPIFFS, "/css/bootstrap.min.css", "text/css");
   });
+
+  
+   server.on("/css/bootstrap4-toggle.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send(SPIFFS, "/css/bootstrap4-toggle.min.css", "text/css");
+  });
+
 
   server.onNotFound(notFound);
 
@@ -595,6 +617,6 @@ void loop() {
   }
 
   M5.update();
-  delay(100);
+//  delay(100);
 #endif
 }
