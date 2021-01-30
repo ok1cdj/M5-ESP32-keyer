@@ -22,10 +22,16 @@
             <form class="needs-validation" method="GET" action="/cfg-save" id="form" novalidate>
 
                 <div class="form-check form-check-inline p-0">
-                    <input id="wifi" name="wifi" class="form-check-input" type="checkbox" data-toggle="toggle" data-size="small"
+		<div class="form-group">
+                    <label for="apikey">API Key</label>
+                    <input type="text" id="apikey" class="form-control" name="apikey" value="%APIKEY%" required>
+                    <div class="invalid-feedback">Insert API Key</div>
+                </div>
+		<div class="form-group mt-2">
+                    <input id="dhcp" name="dhcp" class="form-check-input" type="checkbox" data-toggle="toggle" data-size="small"
                            data-on="DHCP ON" data-off="DHCP OFF" data-onstyle="success" data-offstyle="secondary"
-                           onchange="dhcpChange()" checked>
-                    <label for="wifi" class="form-check-label text-muted">Switch between DHCP and Static IP</label>
+                           onchange="dhcpChange()" %DHCP%>
+                    <label for="dhcp" class="form-check-label text-muted">Switch between DHCP and Static IP</label>
                 </div>
                 <div class="form-group">
                     <label for="localip">IP Address</label>
@@ -74,7 +80,7 @@
         </div>
     </div>
 </div>
-
+</div>
 <footer class="d-flex justify-content-center m-5">
     &copy;OK1CDJ<a href="https://hamshop.cz" class="px-1">hamshop.cz</a>
 </footer>
@@ -108,11 +114,11 @@
     })();
 
     function dhcpChange() {
-        document.getElementById('localip').disabled = document.getElementById('wifi').checked;
-        document.getElementById('subnet').disabled = document.getElementById('wifi').checked;
-        document.getElementById('gateway').disabled = document.getElementById('wifi').checked;
-        document.getElementById('pdns').disabled = document.getElementById('wifi').checked;
-        document.getElementById('sdns').disabled = document.getElementById('wifi').checked;
+        document.getElementById('localip').disabled = document.getElementById('dhcp').checked;
+        document.getElementById('subnet').disabled = document.getElementById('dhcp').checked;
+        document.getElementById('gateway').disabled = document.getElementById('dhcp').checked;
+        document.getElementById('pdns').disabled = document.getElementById('dhcp').checked;
+        document.getElementById('sdns').disabled = document.getElementById('dhcp').checked;
     }
 
     function conChange() {

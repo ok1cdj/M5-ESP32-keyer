@@ -62,6 +62,12 @@ Preferences preferences;
 String ssid       = "";
 String password   = "";
 String apikey     = "";
+String sIP        = "";
+String sGateway   = "";
+String sSubnet    = "";
+String sPrimaryDNS = "";
+String sSecondaryDNS = "";
+
 
 String hMessage = "Remote CW Keyer by @OK1CDJ";
 
@@ -79,7 +85,15 @@ String message;
 String sspeed = "20";
 
 bool wifiConfigRequired = false;
+bool dhcp = true; // dhcp enable disble
+
 IPAddress IP;
+IPAddress gateway;
+IPAddress subnet;
+IPAddress primaryDNS;
+IPAddress secondaryDNS;
+
+
 
 struct t_mtab {
   char c, pat;
@@ -318,6 +332,7 @@ void drawIcon(int16_t x, int16_t y, const uint8_t *bitmap, uint16_t color) {
   }
 }
 #endif
+
 // process replacement in html pages
 String processor(const String& var) {
   if (var == "SPEED") {
@@ -344,6 +359,32 @@ String processor(const String& var) {
 
 #endif
   }
+  if (var == "DHCP") {
+
+    String rsp = "";
+    if (dhcp) rsp = "checked";
+
+    return  rsp;
+  }
+
+
+  if (var == "LOCALIP") {
+    return sIP;
+  }
+  if (var == "SUBNET") {
+    return sSubnet;
+  }
+
+  if (var == "GATEWAY") {
+    return sGateway;
+  }
+
+  if (var == "PDNS") {
+    return sPrimaryDNS;
+  }
+  if (var == "SDNS") {
+    return sSecondaryDNS;
+  }
 
   return String();
 }
@@ -354,6 +395,13 @@ void savePrefs()
   preferences.putString("ssid", ssid);
   preferences.putString("password", password);
   preferences.putString("apikey", apikey);
+  preferences.putBool("dhcp", dhcp);
+  preferences.getString("ip", sIP);
+  preferences.getString("gateway", sGateway);
+  preferences.getString("subnet", sSubnet);
+  preferences.getString("pdns", sPrimaryDNS);
+  preferences.getString("sdns", sSecondaryDNS);
+
   preferences.end();
 
 }
@@ -384,9 +432,16 @@ void setup() {
 
   // read preferences
   preferences.begin("keyer", false);
+  dhcp = preferences.getBool("dhcp", 1);
   ssid = preferences.getString("ssid");
   password = preferences.getString("password");
   apikey = preferences.getString("apikey");
+  sIP        = preferences.getString("ip", "192.168.1.200");
+  sGateway   = preferences.getString("gateway", "192.168.1.1");
+  sSubnet    = preferences.getString("subnet", "255.255.255.0");
+  sPrimaryDNS = preferences.getString("pdns", "8.8.8.8");
+  sSecondaryDNS = preferences.getString("sdns", "8.8.4.4");
+
   preferences.end();
 
 
