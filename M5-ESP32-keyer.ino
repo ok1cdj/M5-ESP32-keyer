@@ -46,6 +46,9 @@
 
 #include <SPIFFS.h>
 #include <Preferences.h>
+#include <ESPmDNS.h>
+#include <Update.h>
+
 
 #define UDP_PORT 6789 // 
 
@@ -515,6 +518,19 @@ void setup() {
       request->send(401, "text/plain", "Unauthorized");
     }
   });
+
+
+  server.on("/update", HTTP_GET, [](AsyncWebServerRequest * request) {
+
+    if ((request->hasParam(PARAM_APIKEY) && request->getParam(PARAM_APIKEY)->value() == apikey) || wifiConfigRequired) {
+
+      request->send(SPIFFS, "/update.html", String(), false,   processor);
+    }
+    else {
+      request->send(401, "text/plain", "Unauthorized");
+    }
+  });
+
 
   server.on("/cfg", HTTP_GET, [](AsyncWebServerRequest * request)
   {
