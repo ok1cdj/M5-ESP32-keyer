@@ -336,6 +336,14 @@ String processor(const String& var) {
   if (var == "APIKEY") {
     return apikey;
   }
+#ifdef M5Stick
+  if (var == "ETHDISABLE") {
+
+    String rsp = "disabled";
+    return  rsp;
+
+#endif
+  }
 
   return String();
 }
@@ -462,7 +470,7 @@ void setup() {
   });
   server.on("/cfg-save", HTTP_GET, [](AsyncWebServerRequest * request)
   {
-   if (request->hasParam("ssid") && request->hasParam("password")) {
+    if (request->hasParam("ssid") && request->hasParam("password")) {
       ssid = request->getParam(PARAM_SSID)->value();
       password = request->getParam(PARAM_PASSWORD)->value();
       //apikey = request->getParam(PARAM_APIKEY)->value();
@@ -472,7 +480,7 @@ void setup() {
       ESP.restart();
       //request->redirect("/");
     }
-    else 
+    else
       request->send(400, "text/plain", "Missing required parameters");
   });
 
@@ -499,11 +507,11 @@ void setup() {
     request->send(SPIFFS, "/js/bootstrap.bundle.min.js", "text/javascript");
   });
 
-   server.on("/js/bootstrap4-toggle.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/js/bootstrap4-toggle.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send(SPIFFS, "/js/bootstrap4-toggle.min.js", "text/css");
   });
 
-  
+
   server.on("/js/jquery.mask.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send(SPIFFS, "/js/jquery.mask.min.js", "text/css");
   });
@@ -512,12 +520,12 @@ void setup() {
     request->send(SPIFFS, "/js/jquery-3.5.1.min.js", "text/css");
   });
 
-   server.on("/css/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+  server.on("/css/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send(SPIFFS, "/css/bootstrap.min.css", "text/css");
   });
 
-  
-   server.on("/css/bootstrap4-toggle.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+
+  server.on("/css/bootstrap4-toggle.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send(SPIFFS, "/css/bootstrap4-toggle.min.css", "text/css");
   });
 
@@ -561,7 +569,7 @@ void setup() {
             speed = atoi(bb);
             update_speed();
             break;
-            
+
           default:
             break;
         }
@@ -594,7 +602,7 @@ void loop() {
   M5.Lcd.setCursor(0, 60);
   M5.Lcd.print("SPEED: ");
   M5.Lcd.println(sspeed);
-  drawIcon(120,60, (uint8_t*)wifi1_icon16x16, WHITE);
+  drawIcon(120, 60, (uint8_t*)wifi1_icon16x16, WHITE);
   getBatteryLevel();
   drawBatteryStatus(140, 60);
   if (M5.BtnA.wasReleased()) {
@@ -617,6 +625,6 @@ void loop() {
   }
 
   M5.update();
-//  delay(100);
+  //  delay(100);
 #endif
 }
