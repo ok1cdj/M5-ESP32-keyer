@@ -638,6 +638,7 @@ void setup() {
             bb[0] = packet.data()[2];
             bb[1] = packet.data()[3];
             speed = atoi(bb);
+            sspeed = String(speed);
             update_speed();
             break;
 
@@ -696,6 +697,6 @@ void loop() {
   }
 
   M5.update();
-  //  delay(100);
+  delay(100);
 #endif
 }
