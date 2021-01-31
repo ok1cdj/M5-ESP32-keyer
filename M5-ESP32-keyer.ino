@@ -32,6 +32,7 @@
           make compatibility with ESP32 with ethernet like OLIMEX ESP32-POE
 */
 
+
 #define M5Stick
 
 #include <Arduino.h>
@@ -49,8 +50,9 @@
 #include <ESPmDNS.h>
 #include <Update.h>
 
+String sversion = "0.1 31012021";
 
-#define UDP_PORT 6789 // 
+#define UDP_PORT 6789 // UDP port for CW 
 
 // Pin assigment
 #define LED_PIN 10
@@ -80,8 +82,15 @@ const char* PARAM_SPEED = "speed";
 const char* PARAM_SSID = "ssid";
 const char* PARAM_PASSWORD = "password";
 const char* PARAM_APIKEY = "apikey";
-const char* PARAM_WIFI = "wifi";
+const char* PARAM_DHCP = "dhcp";
 const char* PARAM_CON = "con";
+const char* PARAM_SUBNET = "subnet";
+const char* PARAM_GATEWAY = "gateway";
+const char* PARAM_PDNS = "pdns";
+const char* PARAM_SDNS = "sdns";
+const char* PARAM_LOCALIP = "localip";
+
+
 
 // CW variables
 String message;
@@ -541,11 +550,21 @@ void setup() {
   });
   server.on("/cfg-save", HTTP_GET, [](AsyncWebServerRequest * request)
   {
-    if (request->hasParam("ssid") && request->hasParam("password")) {
+    if (request->hasParam("ssid") && request->hasParam("password") && request->hasParam("apikey") && request->hasParam("dhcp") && request->hasParam("localip") && request->hasParam("subnet") && request->hasParam("gateway") && request->hasParam("pdns") && request->hasParam("sdns") && request->hasParam("con")) {
       ssid = request->getParam(PARAM_SSID)->value();
       password = request->getParam(PARAM_PASSWORD)->value();
-      //apikey = request->getParam(PARAM_APIKEY)->value();
-      savePrefs();
+      apikey = request->getParam(PARAM_APIKEY)->value();
+      //dhcp = preferences.getBool("dhcp", 1);
+      //dhcp = preferences.getBool("con", 1);
+      sIP        = request->getParam(PARAM_LOCALIP)->value();
+      sGateway   = request->getParam(PARAM_GATEWAY)->value();
+      sSubnet    = request->getParam(PARAM_SUBNET)->value();
+      sPrimaryDNS = request->getParam(PARAM_PDNS)->value();
+      sSecondaryDNS = request->getParam(PARAM_SDNS)->value();
+    
+    //  savePrefs();
+    // http://192.168.1.118/cfg-save?apikey=1111&dhcp=on&ssid=TP-Link&password=
+    // http://192.168.1.118/cfg-save?apikey=1111&localip=192.168.1.200&subnet=255.255.255.0&gateway=192.168.1.1&pdns=8.8.8.8&sdns=8.8.4.4&ssid=TP-Link&password=
       request->send(200, "text/plain", "Config saved - SSID:" + ssid + " APIKEY: " + apikey + " rest in 5 seconds");
       delay(5000);
       ESP.restart();
