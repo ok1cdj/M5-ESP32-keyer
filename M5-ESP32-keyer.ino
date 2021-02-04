@@ -50,7 +50,7 @@
 #include <ESPmDNS.h>
 #include <Update.h>
 
-String sversion = "0.1 31012021";
+String sversion = " 0.1 040221";
 
 #define UDP_PORT 6789 // UDP port for CW 
 
@@ -74,7 +74,7 @@ String sPrimaryDNS = "";
 String sSecondaryDNS = "";
 
 
-String hMessage = "Remote CW Keyer by @OK1CDJ";
+String hMessage = "Remote CW Keyer by OK1CDJ";
 
 // web server requests
 const char* PARAM_MESSAGE = "message";
@@ -98,6 +98,7 @@ String sspeed = "20";
 
 bool wifiConfigRequired = false;
 bool dhcp = true; // dhcp enable disble
+bool con=false; // connection type wifi false
 
 IPAddress IP;
 IPAddress gateway;
@@ -408,6 +409,7 @@ void savePrefs()
   preferences.putString("password", password);
   preferences.putString("apikey", apikey);
   preferences.putBool("dhcp", dhcp);
+  preferences.putBool("con", con);
   preferences.getString("ip", sIP);
   preferences.getString("gateway", sGateway);
   preferences.getString("subnet", sSubnet);
@@ -445,6 +447,7 @@ void setup() {
   // read preferences
   preferences.begin("keyer", false);
   dhcp = preferences.getBool("dhcp", 1);
+  con  = preferences.getBool("con", 0);
   ssid = preferences.getString("ssid");
   password = preferences.getString("password");
   apikey = preferences.getString("apikey");
@@ -550,22 +553,23 @@ void setup() {
   });
   server.on("/cfg-save", HTTP_GET, [](AsyncWebServerRequest * request)
   {
-    if (request->hasParam("ssid") && request->hasParam("password") && request->hasParam("apikey") && request->hasParam("dhcp") && request->hasParam("localip") && request->hasParam("subnet") && request->hasParam("gateway") && request->hasParam("pdns") && request->hasParam("sdns") && request->hasParam("con")) {
+    if (request->hasParam("ssid") && request->hasParam("password") && request->hasParam("apikey")) {
       ssid = request->getParam(PARAM_SSID)->value();
-      password = request->getParam(PARAM_PASSWORD)->value();
+      if(request->getParam(PARAM_PASSWORD)->value()!=NULL) password = request->getParam(PARAM_PASSWORD)->value();
       apikey = request->getParam(PARAM_APIKEY)->value();
-      //dhcp = preferences.getBool("dhcp", 1);
-      //dhcp = preferences.getBool("con", 1);
-      sIP        = request->getParam(PARAM_LOCALIP)->value();
-      sGateway   = request->getParam(PARAM_GATEWAY)->value();
-      sSubnet    = request->getParam(PARAM_SUBNET)->value();
-      sPrimaryDNS = request->getParam(PARAM_PDNS)->value();
-      sSecondaryDNS = request->getParam(PARAM_SDNS)->value();
-    
-    //  savePrefs();
+
+      if(request->hasParam("dhcp")) dhcp = true; else dhcp=false;  
+      if(request->hasParam("localip")) sIP = request->getParam(PARAM_LOCALIP)->value();
+      if(request->hasParam("gateway")) sGateway   = request->getParam(PARAM_GATEWAY)->value();
+      if(request->hasParam("subnet")) sSubnet    = request->getParam(PARAM_SUBNET)->value();
+      if(request->hasParam("pdns")) sPrimaryDNS = request->getParam(PARAM_PDNS)->value();
+      if(request->hasParam("sdns")) sSecondaryDNS = request->getParam(PARAM_SDNS)->value();
+      if(request->hasParam("con")) con = true; else con=false;
+      
     // http://192.168.1.118/cfg-save?apikey=1111&dhcp=on&ssid=TP-Link&password=
     // http://192.168.1.118/cfg-save?apikey=1111&localip=192.168.1.200&subnet=255.255.255.0&gateway=192.168.1.1&pdns=8.8.8.8&sdns=8.8.4.4&ssid=TP-Link&password=
       request->send(200, "text/plain", "Config saved - SSID:" + ssid + " APIKEY: " + apikey + " rest in 5 seconds");
+      savePrefs();
       delay(5000);
       ESP.restart();
       //request->redirect("/");
@@ -693,6 +697,7 @@ void loop() {
   M5.Lcd.setCursor(0, 60);
   M5.Lcd.print("SPEED: ");
   M5.Lcd.println(sspeed);
+  M5.Lcd.println(sversion);
   drawIcon(120, 60, (uint8_t*)wifi1_icon16x16, WHITE);
   getBatteryLevel();
   drawBatteryStatus(140, 60);
