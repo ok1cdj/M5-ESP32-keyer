@@ -32,6 +32,7 @@
           make compatibility with ESP32 with ethernet like OLIMEX ESP32-POE
 */
 
+
 #define M5Stick
 
 #include <Arduino.h>
@@ -46,8 +47,12 @@
 
 #include <SPIFFS.h>
 #include <Preferences.h>
+#include <ESPmDNS.h>
+#include <Update.h>
 
-#define UDP_PORT 6789 // 
+String sversion = " 0.1 040221";
+
+#define UDP_PORT 6789 // UDP port for CW 
 
 // Pin assigment
 #define LED_PIN 10
@@ -62,8 +67,14 @@ Preferences preferences;
 String ssid       = "";
 String password   = "";
 String apikey     = "";
+String sIP        = "";
+String sGateway   = "";
+String sSubnet    = "";
+String sPrimaryDNS = "";
+String sSecondaryDNS = "";
 
-String hMessage = "Remote CW Keyer by @OK1CDJ";
+
+String hMessage = "Remote CW Keyer by OK1CDJ";
 
 // web server requests
 const char* PARAM_MESSAGE = "message";
@@ -71,13 +82,31 @@ const char* PARAM_SPEED = "speed";
 const char* PARAM_SSID = "ssid";
 const char* PARAM_PASSWORD = "password";
 const char* PARAM_APIKEY = "apikey";
+const char* PARAM_DHCP = "dhcp";
+const char* PARAM_CON = "con";
+const char* PARAM_SUBNET = "subnet";
+const char* PARAM_GATEWAY = "gateway";
+const char* PARAM_PDNS = "pdns";
+const char* PARAM_SDNS = "sdns";
+const char* PARAM_LOCALIP = "localip";
+
+
 
 // CW variables
 String message;
 String sspeed = "20";
 
 bool wifiConfigRequired = false;
+bool dhcp = true; // dhcp enable disble
+bool con=false; // connection type wifi false
+
 IPAddress IP;
+IPAddress gateway;
+IPAddress subnet;
+IPAddress primaryDNS;
+IPAddress secondaryDNS;
+
+
 
 struct t_mtab {
   char c, pat;
@@ -316,6 +345,7 @@ void drawIcon(int16_t x, int16_t y, const uint8_t *bitmap, uint16_t color) {
   }
 }
 #endif
+
 // process replacement in html pages
 String processor(const String& var) {
   if (var == "SPEED") {
@@ -334,6 +364,40 @@ String processor(const String& var) {
   if (var == "APIKEY") {
     return apikey;
   }
+#ifdef M5Stick
+  if (var == "ETHDISABLE") {
+
+    String rsp = "disabled";
+    return  rsp;
+
+#endif
+  }
+  if (var == "DHCP") {
+
+    String rsp = "";
+    if (dhcp) rsp = "checked";
+
+    return  rsp;
+  }
+
+
+  if (var == "LOCALIP") {
+    return sIP;
+  }
+  if (var == "SUBNET") {
+    return sSubnet;
+  }
+
+  if (var == "GATEWAY") {
+    return sGateway;
+  }
+
+  if (var == "PDNS") {
+    return sPrimaryDNS;
+  }
+  if (var == "SDNS") {
+    return sSecondaryDNS;
+  }
 
   return String();
 }
@@ -344,6 +408,14 @@ void savePrefs()
   preferences.putString("ssid", ssid);
   preferences.putString("password", password);
   preferences.putString("apikey", apikey);
+  preferences.putBool("dhcp", dhcp);
+  preferences.putBool("con", con);
+  preferences.getString("ip", sIP);
+  preferences.getString("gateway", sGateway);
+  preferences.getString("subnet", sSubnet);
+  preferences.getString("pdns", sPrimaryDNS);
+  preferences.getString("sdns", sSecondaryDNS);
+
   preferences.end();
 
 }
@@ -374,9 +446,17 @@ void setup() {
 
   // read preferences
   preferences.begin("keyer", false);
+  dhcp = preferences.getBool("dhcp", 1);
+  con  = preferences.getBool("con", 0);
   ssid = preferences.getString("ssid");
   password = preferences.getString("password");
   apikey = preferences.getString("apikey");
+  sIP        = preferences.getString("ip", "192.168.1.200");
+  sGateway   = preferences.getString("gateway", "192.168.1.1");
+  sSubnet    = preferences.getString("subnet", "255.255.255.0");
+  sPrimaryDNS = preferences.getString("pdns", "8.8.8.8");
+  sSecondaryDNS = preferences.getString("sdns", "8.8.4.4");
+
   preferences.end();
 
 
@@ -451,6 +531,19 @@ void setup() {
     }
   });
 
+
+  server.on("/update", HTTP_GET, [](AsyncWebServerRequest * request) {
+
+    if ((request->hasParam(PARAM_APIKEY) && request->getParam(PARAM_APIKEY)->value() == apikey) || wifiConfigRequired) {
+
+      request->send(SPIFFS, "/update.html", String(), false,   processor);
+    }
+    else {
+      request->send(401, "text/plain", "Unauthorized");
+    }
+  });
+
+
   server.on("/cfg", HTTP_GET, [](AsyncWebServerRequest * request)
   {
     if ((request->hasParam(PARAM_APIKEY) && request->getParam(PARAM_APIKEY)->value() == apikey) || wifiConfigRequired) {
@@ -460,12 +553,24 @@ void setup() {
   });
   server.on("/cfg-save", HTTP_GET, [](AsyncWebServerRequest * request)
   {
-    if (request->hasParam("ssid") && request->hasParam("password")) {
+    if (request->hasParam("ssid") && request->hasParam("password") && request->hasParam("apikey")) {
       ssid = request->getParam(PARAM_SSID)->value();
-      password = request->getParam(PARAM_PASSWORD)->value();
+      if(request->getParam(PARAM_PASSWORD)->value()!=NULL) password = request->getParam(PARAM_PASSWORD)->value();
       apikey = request->getParam(PARAM_APIKEY)->value();
+
+      if(request->hasParam("dhcp")) dhcp = true; else dhcp=false;  
+      if(request->hasParam("localip")) sIP = request->getParam(PARAM_LOCALIP)->value();
+      if(request->hasParam("gateway")) sGateway   = request->getParam(PARAM_GATEWAY)->value();
+      if(request->hasParam("subnet")) sSubnet    = request->getParam(PARAM_SUBNET)->value();
+      if(request->hasParam("pdns")) sPrimaryDNS = request->getParam(PARAM_PDNS)->value();
+      if(request->hasParam("sdns")) sSecondaryDNS = request->getParam(PARAM_SDNS)->value();
+      if(request->hasParam("con")) con = true; else con=false;
+      
+    // http://192.168.1.118/cfg-save?apikey=1111&dhcp=on&ssid=TP-Link&password=
+    // http://192.168.1.118/cfg-save?apikey=1111&localip=192.168.1.200&subnet=255.255.255.0&gateway=192.168.1.1&pdns=8.8.8.8&sdns=8.8.4.4&ssid=TP-Link&password=
+      request->send(200, "text/plain", "Config saved - SSID:" + ssid + " APIKEY: " + apikey + " restart in 5 seconds");
       savePrefs();
-      request->send(200, "text/plain", "Config saved - SSID:" + ssid + " APIKEY: " + apikey + " rest in 5 seconds");
+      delay(5000);
       ESP.restart();
       //request->redirect("/");
     }
@@ -492,13 +597,32 @@ void setup() {
 
   });
 
-  server.on("/css/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
-    request->send(SPIFFS, "/css/bootstrap.bundle.min.js", "text/javascript");
+  server.on("/js/bootstrap.bundle.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send(SPIFFS, "/js/bootstrap.bundle.min.js", "text/javascript");
+  });
+
+  server.on("/js/bootstrap4-toggle.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send(SPIFFS, "/js/bootstrap4-toggle.min.js", "text/css");
+  });
+
+
+  server.on("/js/jquery.mask.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send(SPIFFS, "/js/jquery.mask.min.js", "text/css");
+  });
+
+  server.on("/js/jquery-3.5.1.min.js", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send(SPIFFS, "/js/jquery-3.5.1.min.js", "text/css");
   });
 
   server.on("/css/bootstrap.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
     request->send(SPIFFS, "/css/bootstrap.min.css", "text/css");
   });
+
+
+  server.on("/css/bootstrap4-toggle.min.css", HTTP_GET, [](AsyncWebServerRequest * request) {
+    request->send(SPIFFS, "/css/bootstrap4-toggle.min.css", "text/css");
+  });
+
 
   server.onNotFound(notFound);
 
@@ -537,9 +661,10 @@ void setup() {
             bb[0] = packet.data()[2];
             bb[1] = packet.data()[3];
             speed = atoi(bb);
+            sspeed = String(speed);
             update_speed();
             break;
-            
+
           default:
             break;
         }
@@ -572,7 +697,8 @@ void loop() {
   M5.Lcd.setCursor(0, 60);
   M5.Lcd.print("SPEED: ");
   M5.Lcd.println(sspeed);
-  drawIcon(120,60, (uint8_t*)wifi1_icon16x16, WHITE);
+  M5.Lcd.println(sversion);
+  drawIcon(120, 60, (uint8_t*)wifi1_icon16x16, WHITE);
   getBatteryLevel();
   drawBatteryStatus(140, 60);
   if (M5.BtnA.wasReleased()) {

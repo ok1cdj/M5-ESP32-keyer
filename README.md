@@ -4,15 +4,19 @@
 
 Primary desiged for M5StickC but can be used with **any ESP32 board**
 
- ![GitHub Logo](https://raw.githubusercontent.com/ok1cdj/M5-ESP32-keyer/master/M5StickC-key.png)
+ ![M5](https://raw.githubusercontent.com/ok1cdj/M5-ESP32-keyer/master/M5StickC-key.png)
 
-If you wold like try another ESP32 board emove #define M5Stick and correct Pin assigment
+You can get M5Stack **M5StickC CW** Hat from hamshop.cz
+
+https://www.hamshop.cz/morse-a-cw-c35/m5stack-m5stickc-cw-hat-i402/
+
+If you would like try another ESP32 board remove #define M5Stick and correct Pin assigment
 
 **Features:**
 
    Responsive Web interface based on Boostrap
    
-   ![GitHub Logo](https://raw.githubusercontent.com/ok1cdj/M5-ESP32-keyer/master/webinterface.png)
+   ![WEB](https://raw.githubusercontent.com/ok1cdj/M5-ESP32-keyer/master/webinterface.png)
           
    **http** based service for remote control from another application
           
