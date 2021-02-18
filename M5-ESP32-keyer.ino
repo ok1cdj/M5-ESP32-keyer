@@ -568,7 +568,7 @@ void setup() {
       
     // http://192.168.1.118/cfg-save?apikey=1111&dhcp=on&ssid=TP-Link&password=
     // http://192.168.1.118/cfg-save?apikey=1111&localip=192.168.1.200&subnet=255.255.255.0&gateway=192.168.1.1&pdns=8.8.8.8&sdns=8.8.4.4&ssid=TP-Link&password=
-      request->send(200, "text/plain", "Config saved - SSID:" + ssid + " APIKEY: " + apikey + " rest in 5 seconds");
+      request->send(200, "text/plain", "Config saved - SSID:" + ssid + " APIKEY: " + apikey + " restart in 5 seconds");
       savePrefs();
       delay(5000);
       ESP.restart();
