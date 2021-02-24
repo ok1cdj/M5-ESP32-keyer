@@ -37,3 +37,6 @@ If you would like try another ESP32 board remove #define M5Stick and correct Pin
 
   **TODO:**
    make compatibility with ESP32 with ethernet like OLIMEX ESP32-POE
+   
+ [![https://www.buymeacoffee.com/ok1cdj](https://img.shields.io/badge/Donate-Buy%20me%20a%20coffee-orange?style=for-the-badge)](https://www.buymeacoffee.com/ok1cdj)
+
