@@ -109,6 +109,8 @@ AtomS3 Lite was measured with a slow USB meter: the average is about 30 mA in al
 
 ## Building
 
+Requires PlatformIO Core 6.2 or newer (`pipx install platformio`), because the pioarduino platform 55.03.312-1 depends on it.
+
 ```
 pio test -e native          # host tests of the keyer core and protocol
 pio run -e atoms3-lite      # or atom-lite, atoms3
