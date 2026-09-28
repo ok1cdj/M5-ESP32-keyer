@@ -22,7 +22,9 @@ jobs:
           key: pio-native-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
           restore-keys: pio-native-${{ runner.os }}-
       - name: Install PlatformIO
-        run: pip install --upgrade platformio
+        # Pinned: PlatformIO 6.2 ships SCons 4.11, which breaks the pioarduino
+        # 55.03.39 hybrid compile (custom_sdkconfig) of the S3 envs.
+        run: pip install platformio==6.1.19
       - name: Host tests (keyer core, protocol)
         run: pio test -e native
 
@@ -46,7 +48,9 @@ jobs:
           key: pio-${{ matrix.env }}-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
           restore-keys: pio-${{ matrix.env }}-${{ runner.os }}-
       - name: Install PlatformIO
-        run: pip install --upgrade platformio
+        # Pinned: PlatformIO 6.2 ships SCons 4.11, which breaks the pioarduino
+        # 55.03.39 hybrid compile (custom_sdkconfig) of the S3 envs.
+        run: pip install platformio==6.1.19
       - name: Build ${{ matrix.env }}
         run: pio run -e ${{ matrix.env }}
       - uses: actions/upload-artifact@v4

@@ -44,7 +44,9 @@ jobs:
             pio-release-${{ runner.os }}-
 
       - name: Install PlatformIO
-        run: pip install --upgrade platformio
+        # Pinned: PlatformIO 6.2 ships SCons 4.11, which breaks the pioarduino
+        # 55.03.39 hybrid compile (custom_sdkconfig) of the S3 envs.
+        run: pip install platformio==6.1.19
 
       - name: Host tests
         run: pio test -e native
