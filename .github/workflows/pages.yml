@@ -1,0 +1,74 @@
+name: Deploy install page
+
+# Deploys docs/ + the latest released firmware to GitHub Pages. Runs on page
+# edits on master, manual dispatch, and again after a firmware release so the
+# version badge refreshes. It never builds firmware: it downloads the
+# keyer-*.factory.bin images from the latest GitHub Release.
+#
+# All three triggers run in the default-branch (master) context, which the
+# github-pages environment already allows, so no tag protection rule is needed.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "docs/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["Release firmware"]
+    types: [completed]
+
+permissions:
+  contents: read # download the release assets
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # For the workflow_run trigger, only deploy when the release actually passed.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Assemble site with latest released firmware
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # The latest published release provides both the firmware and version.
+          TAG=$(gh release view --json tagName -q .tagName)
+          VERSION="${TAG#v}"
+          echo "Latest release: ${TAG} (version ${VERSION})"
+
+          rm -rf _site
+          mkdir -p _site/firmware
+          cp docs/*.html docs/manifest-*.json docs/CNAME _site/
+          gh release download "$TAG" --pattern 'keyer-*.factory.bin' --dir _site/firmware
+
+          # Stamp the released version into the published manifests.
+          for M in _site/manifest-*.json; do
+            jq --arg v "$VERSION" '.version = $v' "$M" > "$M.tmp"
+            mv "$M.tmp" "$M"
+          done
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Install CW keyer firmware</title>
+<meta name="description" content="Flash the OK1CDJ CW keyer firmware to an M5Stack Atom Lite, AtomS3 Lite or AtomS3 directly from your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0c1016;
+    --panel:#131a23;
+    --hairline:#232c3a;
+    --brass:#c98a3c;
+    --brass-bright:#e2a457;
+    --cyan:#5fd0c9;
+    --text:#eef2f5;
+    --text-muted:#8793a1;
+    --danger:#d9614f;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--ink);}
+  body{
+    font-family:'Inter',system-ui,-apple-system,sans-serif;
+    color:var(--text);
+    padding:40px 20px 64px;
+    max-width:880px;
+    margin-inline:auto;
+    line-height:1.5;
+  }
+  a{color:var(--cyan);}
+  a:focus-visible, button:focus-visible{outline:2px solid var(--cyan);outline-offset:3px;}
+  h1,h2{font-family:'IBM Plex Mono',ui-monospace,monospace;font-weight:600;letter-spacing:-0.01em;margin:0;}
+
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;text-transform:uppercase;
+    letter-spacing:.14em;font-size:12px;color:var(--text-muted);margin:0 0 12px;
+  }
+  .hero h1{font-size:clamp(28px,5vw,40px);margin:0 0 14px;}
+  .lede{color:var(--text-muted);font-size:16px;max-width:58ch;margin:0 0 24px;}
+  .hero img{width:170px;max-width:45%;border-radius:var(--radius);border:1px solid var(--hairline);display:block;margin:20px 0 4px;}
+  .badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+  .badge{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;padding:5px 10px;
+    border:1px solid var(--hairline);border-radius:999px;color:var(--text-muted);
+  }
+
+  .morse-wrap{display:flex;justify-content:center;margin:30px 0 6px;}
+  .morse-wrap svg{width:min(480px,92%);height:auto;filter:drop-shadow(0 0 6px rgba(201,138,60,.45));}
+  .morse-caption{
+    text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    color:var(--text-muted);letter-spacing:.12em;margin:8px 0 36px;
+  }
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+  @media (max-width:720px){ .grid{grid-template-columns:1fr;} }
+
+  .panel{
+    background:var(--panel);border:1px solid var(--hairline);
+    border-radius:var(--radius);padding:24px 26px;
+  }
+  .panel h2{
+    font-size:13px;margin:0 0 16px;color:var(--text-muted);
+    text-transform:uppercase;letter-spacing:.1em;
+  }
+
+  .checklist ul{margin:0;padding-left:18px;color:var(--text-muted);font-size:14px;}
+  .checklist li{margin-bottom:12px;}
+  .checklist strong{color:var(--text);}
+
+  .install{display:flex;flex-direction:column;}
+  .install-btn{
+    font-family:'IBM Plex Mono',monospace;
+    background:var(--brass);color:var(--ink);border:none;border-radius:6px;
+    padding:14px 20px;font-size:15px;font-weight:600;cursor:pointer;
+    transition:background .15s ease;width:100%;
+  }
+  .install-btn:hover{background:var(--brass-bright);}
+  .notice{
+    display:block;font-size:13px;line-height:1.6;padding:12px 14px;border-radius:8px;
+    background:rgba(217,97,79,.12);border:1px solid rgba(217,97,79,.4);color:#f2b3a8;
+  }
+  .hint{font-size:13px;color:var(--text-muted);margin-top:14px;}
+  .install h3{font-family:'IBM Plex Mono',monospace;font-size:14px;margin:0 0 10px;}
+  .install + .install{margin-top:0;}
+  .warn{margin-top:18px;}
+
+  .steps ol{color:var(--text-muted);font-size:14px;line-height:1.9;padding-left:20px;margin:0;}
+  .steps li::marker{color:var(--brass);font-family:'IBM Plex Mono',monospace;}
+
+  footer{
+    margin-top:44px;display:flex;flex-direction:column;gap:16px;align-items:center;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-muted);
+    text-align:center;
+  }
+  .support{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .support img{height:34px;display:block;}
+  .footer-links{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;align-items:center;}
+  .footer-copy{color:var(--text-muted);}
+
+  .grid > *, .panel{min-width:0;}
+  code{overflow-wrap:anywhere;}
+  .hero h1{overflow-wrap:anywhere;}
+  .config{margin-top:18px;}
+  .config .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}
+  .config label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--text-muted);flex:1 1 200px;}
+  .config input,.config select{
+    font-family:'IBM Plex Mono',monospace;font-size:14px;color:var(--text);background:var(--ink);
+    border:1px solid var(--hairline);border-radius:6px;padding:10px 12px;width:100%;
+  }
+  .config input:focus,.config select:focus{outline:2px solid var(--cyan);outline-offset:1px;}
+  .btn{
+    font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;cursor:pointer;
+    background:transparent;color:var(--text);border:1px solid var(--hairline);border-radius:6px;padding:10px 16px;
+  }
+  .btn:hover:not(:disabled){border-color:var(--brass);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn.primary{background:var(--brass);color:var(--ink);border-color:var(--brass);}
+  .btn.primary:hover:not(:disabled){background:var(--brass-bright);}
+  .btn.danger{border-color:var(--danger);color:var(--danger);}
+  .dev-status{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text-muted);}
+  .dev-status strong{color:var(--cyan);font-weight:600;}
+  .config fieldset{border:1px solid var(--hairline);border-radius:8px;padding:16px;margin:0 0 14px;}
+  .config fieldset:disabled{opacity:.55;}
+  .config legend{font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);padding:0 6px;}
+  .log{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;line-height:1.6;color:var(--text-muted);
+    background:var(--ink);border:1px solid var(--hairline);border-radius:6px;padding:10px 12px;
+    height:140px;overflow:auto;white-space:pre-wrap;margin:0;
+  }
+  .log .tx{color:var(--brass-bright);} .log .rx{color:var(--cyan);} .log .err{color:var(--danger);}
+
+  esp-web-install-button{
+    --esp-tools-button-color: var(--brass);
+    --esp-tools-button-text-color: var(--ink);
+    --esp-tools-button-border-radius: 6px;
+    display:block;
+  }
+</style>
+</head>
+<body>
+
+  <p class="eyebrow">OK1CDJ / M5-ESP32-keyer</p>
+
+  <header class="hero">
+    <h1>Install CW keyer firmware</h1>
+    <p class="lede">CW keyer for the M5Stack Atom family. Send it text over Bluetooth LE, HTTP or cwdaemon and it keys the radio through an optocoupler. Flash it straight from this page, no IDE and no drivers needed.</p>
+    <div class="badges">
+      <span class="badge">Atom Lite</span>
+      <span class="badge">AtomS3 Lite</span>
+      <span class="badge">AtomS3</span>
+      <span class="badge" id="fw-version">firmware &mdash;</span>
+    </div>
+    <p style="margin:0 0 4px;"><a href="https://github.com/ok1cdj/M5-ESP32-keyer#readme">Read the manual &rarr;</a></p>
+  </header>
+
+  <div class="morse-wrap"><div id="morse-mount"></div></div>
+  <p class="morse-caption" id="morse-caption" aria-hidden="true"></p>
+
+  <main class="grid">
+    <section class="panel checklist">
+      <h2>Before you connect</h2>
+      <ul>
+        <li><strong>Browser</strong>: Chrome or Edge on a desktop or laptop. The flasher uses Web Serial, which Safari, Firefox and phones or tablets don't support.</li>
+        <li><strong>Cable</strong>: a USB-C cable that carries data, not a charge-only one.</li>
+        <li><strong>AtomS3 / AtomS3 Lite</strong>: enter bootloader mode first. Hold the reset button on the side for about 2 seconds, until the green LED inside lights up.</li>
+        <li><strong>Atom Lite</strong>: no button needed. The USB bridge resets the board by itself.</li>
+      </ul>
+    </section>
+
+    <div>
+      <section class="panel install">
+        <h2>Connect &amp; flash</h2>
+        <h3>Atom Lite / AtomS3 Lite</h3>
+        <esp-web-install-button manifest="manifest-lite.json">
+          <button slot="activate" class="install-btn">Connect Atom Lite / AtomS3 Lite</button>
+          <span slot="unsupported" class="notice">This browser can't flash over USB. Open this page in Chrome or Edge on a computer.</span>
+          <span slot="not-allowed" class="notice">The browser allows a USB connection only when this page is loaded over HTTPS.</span>
+        </esp-web-install-button>
+        <p class="hint">The flasher detects the chip (ESP32 or ESP32-S3) and writes the matching build.</p>
+      </section>
+      <section class="panel install" style="margin-top:18px;">
+        <h3>AtomS3 (with display)</h3>
+        <esp-web-install-button manifest="manifest-atoms3.json">
+          <button slot="activate" class="install-btn">Connect AtomS3</button>
+          <span slot="unsupported" class="notice">This browser can't flash over USB. Open this page in Chrome or Edge on a computer.</span>
+          <span slot="not-allowed" class="notice">The browser allows a USB connection only when this page is loaded over HTTPS.</span>
+        </esp-web-install-button>
+        <p class="hint">AtomS3 has the same chip as AtomS3 Lite, so the flasher can't tell the two apart. Use this button only for the AtomS3 with the screen.</p>
+      </section>
+    </div>
+  </main>
+
+  <section class="panel steps">
+    <h2>After flashing</h2>
+    <ol>
+      <li>The board starts in BLE mode, and the LED shows blue for 2 seconds.</li>
+      <li>Connect with kQSO or nRF Connect to <code>keyer-XXXX</code> and send <code>SEND CQ CQ DE ...</code>.</li>
+      <li>To switch mode, hold the button while powering on. When the LED shows the mode you want (blue BLE, green HTTP, yellow CWD), release it.</li>
+      <li>For the HTTP and CWD modes, set up Wi-Fi <a href="#configure">below</a>. The keyer then appears on the network as <code>keyer-XXXX.local</code>.</li>
+    </ol>
+  </section>
+
+  <section class="panel config" id="configure">
+    <h2>Configure over Bluetooth</h2>
+    <p class="hint" style="margin-top:0;">The keyer must be in BLE mode (blue LED at start). This part works in Chrome and Edge on a desktop and in Chrome on Android. On Linux you may have to enable Web Bluetooth at <code>chrome://flags/#enable-web-bluetooth</code>. iPhone and iPad don't have Web Bluetooth: use nRF Connect there.</p>
+    <span class="notice" id="ble-unsupported" style="margin-bottom:12px;" hidden>This browser has no Web Bluetooth. Open this page in Chrome or Edge on a computer, or in Chrome on Android.</span>
+
+    <div class="row">
+      <button class="btn primary" id="ble-connect">Connect keyer</button>
+      <button class="btn" id="ble-disconnect" disabled>Disconnect</button>
+      <span class="dev-status" id="ble-status">not connected</span>
+    </div>
+
+    <fieldset id="ble-controls" disabled>
+      <legend>Wi-Fi (for HTTP and CWD mode)</legend>
+      <div class="row">
+        <label>SSID<input id="wifi-ssid" autocomplete="off" spellcheck="false" maxlength="32"></label>
+        <label>Password<input id="wifi-pass" type="password" autocomplete="off" maxlength="64" placeholder="empty = open network"></label>
+      </div>
+      <div class="row">
+        <label>API key (optional)<input id="api-key" autocomplete="off" spellcheck="false" maxlength="64" placeholder="empty = no authentication"></label>
+      </div>
+      <div class="row">
+        <button class="btn" id="save-wifi">Save Wi-Fi</button>
+        <button class="btn" id="save-key">Save API key</button>
+      </div>
+    </fieldset>
+
+    <fieldset id="ble-mode" disabled>
+      <legend>Mode</legend>
+      <div class="row">
+        <label style="flex:0 1 200px;">Mode after restart
+          <select id="mode">
+            <option value="BLE">BLE (blue)</option>
+            <option value="HTTP" selected>HTTP (green)</option>
+            <option value="CWD">CWD / cwdaemon (yellow)</option>
+          </select>
+        </label>
+        <button class="btn" id="save-mode" style="align-self:flex-end;">Save mode &amp; restart</button>
+      </div>
+      <p class="hint" style="margin:0;">To get back to BLE mode later, hold the button while powering on, and release it when the LED is blue.</p>
+    </fieldset>
+
+    <fieldset id="ble-test" disabled>
+      <legend>Test</legend>
+      <div class="row">
+        <label>Text<input id="send-text" value="CQ CQ DE" spellcheck="false" maxlength="250"></label>
+        <label style="flex:0 1 90px;">WPM<input id="wpm" type="number" min="5" max="50" value="20"></label>
+      </div>
+      <div class="row">
+        <button class="btn" id="send">Send</button>
+        <button class="btn danger" id="stop">STOP</button>
+        <button class="btn" id="set-wpm">Set WPM</button>
+      </div>
+    </fieldset>
+
+    <pre class="log" id="ble-log" aria-live="polite"></pre>
+  </section>
+
+  <footer>
+    <div class="support">
+      <a href="https://buymeacoffee.com/ok1cdj" target="_blank" rel="noopener">
+        <img src="https://img.shields.io/badge/Buy%20me%20a%20coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Buy me a coffee" loading="lazy">
+      </a>
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/ok1cdj/M5-ESP32-keyer" target="_blank" rel="noopener">This project on GitHub</a>
+      <span>&middot;</span>
+      <a href="https://github.com/ok1cdj/M5-ESP32-keyer/blob/master/PROTOCOL.md" target="_blank" rel="noopener">Protocol</a>
+      <span>&middot;</span>
+      <a href="https://apps.ok1cdj.com" target="_blank" rel="noopener">More apps by OK1CDJ</a>
+    </div>
+    <div class="footer-copy">&copy; 2026 Ondrej Kolonicny (OK1CDJ) &middot; GPL-3.0 License</div>
+  </footer>
+
+  <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+  <script>
+  (function(){
+    var MORSE = {
+      A:'.-',B:'-...',C:'-.-.',D:'-..',E:'.',F:'..-.',G:'--.',H:'....',I:'..',J:'.---',
+      K:'-.-',L:'.-..',M:'--',N:'-.',O:'---',P:'.--.',Q:'--.-',R:'.-.',S:'...',T:'-',
+      U:'..-',V:'...-',W:'.--',X:'-..-',Y:'-.--',Z:'--..',
+      '0':'-----','1':'.----','2':'..---','3':'...--','4':'....-',
+      '5':'.....','6':'-....','7':'--...','8':'---..','9':'----.',
+      '/':'-..-.'
+    };
+
+    function tokens(str){
+      var out = [];
+      var chars = str.toUpperCase().split('');
+      chars.forEach(function(ch, i){
+        if(ch === ' '){ out.push({on:false,w:7}); return; }
+        var code = MORSE[ch];
+        if(!code) return;
+        code.split('').forEach(function(sym, j){
+          out.push({on:true, w: sym === '.' ? 1 : 3});
+          if(j < code.length - 1) out.push({on:false, w:1});
+        });
+        if(i < chars.length - 1 && chars[i+1] !== ' ') out.push({on:false, w:3});
+      });
+      return out;
+    }
+
+    function codeString(str){
+      return str.toUpperCase().split('').map(function(ch){ return MORSE[ch] || ''; }).join('  ');
+    }
+
+    function buildSVG(str){
+      var unit = 10, barH = 22;
+      var seq = tokens(str);
+      var x = 0, rects = '';
+      seq.forEach(function(t){
+        var w = t.w * unit;
+        if(t.on){
+          rects += '<rect x="' + x + '" y="0" width="' + (w - 2) + '" height="' + barH + '" rx="3" fill="var(--brass, #c98a3c)"/>';
+        }
+        x += w;
+      });
+      var total = x;
+      var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      var sweep = reduced ? '' :
+        '<rect x="0" y="0" width="2" height="' + barH + '" fill="var(--cyan, #5fd0c9)">' +
+          '<animate attributeName="x" values="0;' + total + ';0" keyTimes="0;0.5;1" dur="6s" repeatCount="indefinite"/>' +
+        '</rect>';
+      return '<svg viewBox="0 0 ' + total + ' ' + barH + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Morse code for CQ DE OK1CDJ">' + rects + sweep + '</svg>';
+    }
+
+    var mount = document.getElementById('morse-mount');
+    if(mount) mount.innerHTML = buildSVG('CQ DE OK1CDJ');
+
+    var cap = document.getElementById('morse-caption');
+    if(cap) cap.textContent = codeString('CQ DE OK1CDJ');
+
+    fetch('manifest-lite.json').then(function(r){ return r.json(); }).then(function(m){
+      var el = document.getElementById('fw-version');
+      if(el && m.version) el.textContent = 'firmware v' + m.version;
+    }).catch(function(){
+      var el = document.getElementById('fw-version');
+      if(el) el.textContent = 'version unknown';
+    });
+  })();
+  </script>
+
+  <script>
+  // Web Bluetooth client of the keyer text protocol (PROTOCOL.md, proto 1).
+  (function(){
+    var NUS = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+    var NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
+    var NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+    var ASYNC = /^(DONE|STOPPED|WPM \d+|ERR (char|full|watchdog))$/;
+    var $ = function(id){ return document.getElementById(id); };
+
+    var device = null, rx = null, rxBuf = '', waiting = [], busy = Promise.resolve();
+
+    function log(text, cls){
+      var el = $('ble-log'), line = document.createElement('div');
+      if(cls) line.className = cls;
+      line.textContent = text;
+      el.appendChild(line);
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function setConnected(on, name){
+      $('ble-connect').disabled = on;
+      $('ble-disconnect').disabled = !on;
+      ['ble-controls','ble-mode','ble-test'].forEach(function(id){ $(id).disabled = !on; });
+      $('ble-status').innerHTML = on ? 'connected to <strong></strong>' : 'not connected';
+      if(on) $('ble-status').querySelector('strong').textContent = name;
+    }
+
+    function onNotify(ev){
+      rxBuf += new TextDecoder().decode(ev.target.value);
+      var nl;
+      while((nl = rxBuf.indexOf('\n')) >= 0){
+        var line = rxBuf.slice(0, nl).replace(/\r$/, '');
+        rxBuf = rxBuf.slice(nl + 1);
+        if(ASYNC.test(line) || !waiting.length){
+          log('  ' + line, /^ERR/.test(line) ? 'err' : 'rx');
+        } else {
+          waiting.shift()(line);
+        }
+      }
+    }
+
+    // One command at a time; resolves with the response line.
+    function command(line, shown){
+      var run = function(){
+        return new Promise(function(resolve, reject){
+          var timer = setTimeout(function(){
+            var i = waiting.indexOf(done); if(i >= 0) waiting.splice(i, 1);
+            reject(new Error('no response'));
+          }, 3000);
+          function done(resp){ clearTimeout(timer); resolve(resp); }
+          waiting.push(done);
+          log('> ' + (shown || line), 'tx');
+          var data = new TextEncoder().encode(line + '\n');
+          var chain = Promise.resolve();
+          // 20-byte writes work without a negotiated MTU; the keyer joins them.
+          for(var i = 0; i < data.length; i += 20){
+            (function(chunk){ chain = chain.then(function(){ return rx.writeValueWithResponse(chunk); }); })(data.slice(i, i + 20));
+          }
+          chain.catch(function(e){ clearTimeout(timer); reject(e); });
+        }).then(function(resp){
+          log('  ' + resp, /^ERR/.test(resp) ? 'err' : 'rx');
+          return resp;
+        });
+      };
+      busy = busy.then(run, run);
+      return busy;
+    }
+
+    function guard(fn){
+      return function(){ fn().catch(function(e){ log('! ' + e.message, 'err'); }); };
+    }
+
+    async function connect(){
+      device = await navigator.bluetooth.requestDevice({
+        filters: [{ namePrefix: 'keyer' }, { services: [NUS] }],
+        optionalServices: [NUS, 'battery_service']
+      });
+      device.addEventListener('gattserverdisconnected', function(){
+        setConnected(false); rx = null; rxBuf = ''; waiting = [];
+        log('disconnected');
+      });
+      var server = await device.gatt.connect();
+      var nus = await server.getPrimaryService(NUS);
+      rx = await nus.getCharacteristic(NUS_RX);
+      var tx = await nus.getCharacteristic(NUS_TX);
+      tx.addEventListener('characteristicvaluechanged', onNotify);
+      await tx.startNotifications();
+      setConnected(true, device.name || 'keyer');
+      log('connected to ' + (device.name || 'keyer'));
+      await command('VER');
+      var st = await command('STATUS');
+      var m = st.match(/WPM (\d+)/); if(m) $('wpm').value = m[1];
+      try {
+        var bas = await server.getPrimaryService('battery_service');
+        var lvl = await bas.getCharacteristic('battery_level');
+        var v = await lvl.readValue();
+        log('  battery ' + v.getUint8(0) + ' %', 'rx');
+      } catch(e){ /* no battery service */ }
+    }
+
+    if(!navigator.bluetooth){
+      $('ble-unsupported').hidden = false;
+      $('ble-connect').disabled = true;
+      return;
+    }
+
+    $('ble-connect').addEventListener('click', guard(connect));
+    $('ble-disconnect').addEventListener('click', function(){ if(device && device.gatt.connected) device.gatt.disconnect(); });
+
+    $('save-wifi').addEventListener('click', guard(async function(){
+      var ssid = $('wifi-ssid').value, pass = $('wifi-pass').value;
+      if(!ssid){ log('! SSID is empty', 'err'); return; }
+      if(/[\t\n]/.test(ssid + pass)){ log('! SSID and password must not contain tabs or line breaks', 'err'); return; }
+      if(('WIFI ' + ssid + '\t' + pass).length > 256){ log('! SSID and password are too long', 'err'); return; }
+      await command('WIFI ' + ssid + '\t' + pass, 'WIFI ' + ssid + ' <password>');
+    }));
+
+    $('save-key').addEventListener('click', guard(async function(){
+      var key = $('api-key').value;
+      if(/\s/.test(key)){ log('! API key must not contain spaces', 'err'); return; }
+      await command(key ? 'APIKEY ' + key : 'APIKEY', key ? 'APIKEY <key>' : 'APIKEY (off)');
+    }));
+
+    $('save-mode').addEventListener('click', guard(async function(){
+      var mode = $('mode').value;
+      var resp = await command('MODE ' + mode);
+      if(resp === 'OK') log('keyer restarts in ' + mode + ' mode' + (mode === 'BLE' ? '' : ', look for keyer-XXXX.local on your network'));
+    }));
+
+    $('send').addEventListener('click', guard(function(){ return command('SEND ' + $('send-text').value); }));
+    $('stop').addEventListener('click', guard(function(){ return command('STOP'); }));
+    $('set-wpm').addEventListener('click', guard(function(){ return command('WPM ' + $('wpm').value); }));
+  })();
+  </script>
+
+</body>
+</html>

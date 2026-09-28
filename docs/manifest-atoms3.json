@@ -1,0 +1,13 @@
+{
+  "name": "M5-ESP32-keyer (AtomS3 with display)",
+  "version": "0.0.0-dev",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        { "path": "firmware/keyer-atoms3.factory.bin", "offset": 0 }
+      ]
+    }
+  ]
+}
