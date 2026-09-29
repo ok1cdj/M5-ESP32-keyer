@@ -119,6 +119,8 @@ void showMode(proto::Mode m) {
 
 void clientEvent() { wakePending = true; }
 
+void buttonPressed() { wakePending = true; }
+
 void setAddress(const std::string& a) {
     portENTER_CRITICAL(&addressLock);
     strlcpy(address, a.c_str(), sizeof(address));

@@ -12,7 +12,11 @@ namespace {
 constexpr const char* NS = "keyer";
 Preferences prefs;
 
-std::string getString(const char* key) { return std::string(prefs.getString(key, "").c_str()); }
+// isKey() first: Preferences logs an error for every missing key.
+std::string getString(const char* key) {
+    if (!prefs.isKey(key)) return {};
+    return std::string(prefs.getString(key, "").c_str());
+}
 
 }  // namespace
 

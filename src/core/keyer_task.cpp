@@ -12,6 +12,7 @@
 #include "fsm.h"
 #include "core/key_output.h"
 #include "settings.h"
+#include "ui/ui.h"
 
 // Test hook: -DWATCHDOG_TEST=1 keeps the key down after the first element so
 // the keying watchdog must open it (hardware check of safety rule 3).
@@ -176,6 +177,7 @@ void onButtonEdge() {
     ev.type = pressed ? keyer::EventType::ButtonDown : keyer::EventType::ButtonUp;
     step(ev);
     activity.fetch_add(1);
+    if (pressed) ui::buttonPressed();
 }
 
 void task(void*) {

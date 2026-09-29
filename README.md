@@ -79,6 +79,7 @@ The same on all boards. On the AtomS3, pressing the screen is the button.
 - **Short press = STOP.** The output opens immediately, even in the middle of a character, and the queue is dropped.
 - **After start-up** the LED shows the mode colour for about 2 s, then turns off to save power.
 - **Client connects or disconnects:** a short blink.
+- **Button press:** a short blink, so you can see the press was registered.
 - **AtomS3 display:**
   - shows the mode, IP address, WPM, battery and the number of characters left to send (`TX 14`),
   - after 10 s of inactivity the backlight turns off and the panel goes to sleep,
@@ -109,12 +110,12 @@ Measured with a USB meter at 5 V, without the battery base. 30 mA is about 4 h o
 
 | board | advertising | connected, idle | sending |
 |---|---|---|---|
-| Atom Lite | _TBD_ mA | _TBD_ mA | _TBD_ mA |
+| Atom Lite | ~40 mA | ~40 mA | ~50 mA |
 | AtomS3 Lite | ~30 mA | ~30 mA | ~30 mA |
 | AtomS3, backlight off | ~40 mA | ~40 mA | ~40 mA |
 | AtomS3, backlight on | ~70 mA | ~70 mA | ~70 mA |
 
-AtomS3 Lite was measured with a slow USB meter: the average is about 30 mA in all three states, with short peaks up to about 50 mA from the radio at BLE events. "Sending" was measured without an optocoupler, which adds about 6 mA while keyed. The AtomS3 backlight is on only for 10 s after a change, so it runs at about 40 mA most of the time, which is about 3 h on the battery base.
+Atom Lite draws about 10 mA more than AtomS3 Lite, which fits the FTDI USB-serial chip it has on board. AtomS3 Lite was measured with a slow USB meter: the average is about 30 mA in all three states, with short peaks up to about 50 mA from the radio at BLE events. "Sending" was measured without an optocoupler, which adds about 6 mA while keyed. The AtomS3 backlight is on only for 10 s after a change, so it runs at about 40 mA most of the time, which is about 3 h on the battery base.
 
 ## Building
 
@@ -131,14 +132,14 @@ pio run -e atoms3-lite -t upload
 
 ### Hardware checklist
 
-Tested so far on AtomS3 Lite and AtomS3; Atom Lite hasn't been tested on hardware yet. The ticked items were checked through the protocol; the keying output on the jack hasn't been measured yet.
+Tested so far on AtomS3 Lite, AtomS3 and Atom Lite. The ticked items were checked through the protocol; the keying output on the jack hasn't been measured yet.
 
 - [ ] Measure the jack after power-on and after a reset: the output must be open.
 - [x] Over BLE, `SEND CQ CQ DE OK1CDJ` is sent correctly (character and word gaps).
 - [x] A command longer than 20 bytes is assembled correctly.
 - [x] The button (on the AtomS3, the screen) in the middle of a message stops keying immediately.
 - [x] Disconnecting the phone in the middle of a message stops keying immediately.
-- [ ] Watchdog: a test build `PLATFORMIO_BUILD_FLAGS=-DWATCHDOG_TEST=1 pio run -e atoms3-lite -t upload` holds the first element down. After 5 s the output must open and `ERR watchdog` must arrive.
+- [x] Watchdog: a test build `PLATFORMIO_BUILD_FLAGS=-DWATCHDOG_TEST=1 pio run -e atoms3-lite -t upload` holds the first element down. After 5 s the output must open and `ERR watchdog` must arrive.
 - [x] Switching modes with the button at power-on works (LED colours on the Lite boards, mode name on the AtomS3).
 - [x] `WIFI` over BLE stores the credentials, and HTTP mode connects after the restart.
 - [x] `/sendmorse` works as in v1: `speed` applies immediately and `message` replaces what is being sent.

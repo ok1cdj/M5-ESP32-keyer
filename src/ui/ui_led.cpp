@@ -1,5 +1,6 @@
 // Status on the RGB LED (Atom Lite, AtomS3 Lite). Dark except for the mode
-// colour after start and short blinks on client connect / disconnect.
+// colour after start and short blinks on client connect / disconnect and on
+// a button press.
 #include <M5Unified.h>
 
 #include "ui/mode_color.h"
@@ -37,6 +38,8 @@ void showMode(proto::Mode m) {
 }
 
 void clientEvent() { blinkPending = true; }
+
+void buttonPressed() { blinkPending = true; }
 
 void setAddress(const std::string&) {}
 
