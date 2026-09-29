@@ -2,7 +2,10 @@
 
 CW keyer for the **M5Stack Atom** family by OK1CDJ. Send it text, and it keys the radio on its own through an optocoupler. The text comes from one of three modes: **BLE**, **HTTP** or **cwdaemon**.
 
-**Install from the browser:** https://keyer.ok1cdj.com (Chrome or Edge on a desktop)
+**Install and configure from the browser:** https://keyer.ok1cdj.com
+
+- Flashing needs Chrome or Edge on a desktop (Web Serial).
+- Configuration over Bluetooth also works in Chrome on Android. On Linux, enable `chrome://flags/#enable-web-bluetooth` and restart Chrome.
 
 Protocol for clients (kQSO, nRF Connect, scripts): [PROTOCOL.md](PROTOCOL.md)
 
@@ -44,9 +47,13 @@ Exactly one transport runs at a time.
 
 **Switching modes.** Hold the button while powering on. The LED cycles through the mode colours about once a second. Release the button when it shows the mode you want, and the keyer stores it and restarts. On the AtomS3 the display shows the mode name instead.
 
-**Wi-Fi setup** for HTTP and CWD happens over BLE. There is no access point and no captive portal:
+**Wi-Fi setup** for HTTP and CWD happens over BLE. There is no access point and no captive portal.
 
-1. In BLE mode, connect with nRF Connect (or kQSO) to `keyer-XXXX`.
+The easiest way is the *Configure over Bluetooth* section of https://keyer.ok1cdj.com: connect, fill in SSID, password and optionally an API key, then choose the mode.
+
+Manually, for example from nRF Connect (on iPhone and iPad this is the only way, because they have no Web Bluetooth):
+
+1. In BLE mode, connect to `keyer-XXXX`.
 2. Write `WIFI <ssid><TAB><password>\n` to the NUS RX characteristic.
 3. Optionally, write `APIKEY <key>\n` to protect the HTTP API.
 4. Write `MODE HTTP\n` (or `MODE CWD\n`).
@@ -74,7 +81,8 @@ The same on all boards. On the AtomS3, pressing the screen is the button.
 - **Client connects or disconnects:** a short blink.
 - **AtomS3 display:**
   - shows the mode, IP address, WPM, battery and the number of characters left to send (`TX 14`),
-  - the backlight turns off after 10 s of inactivity and comes back on when a client connects, when sending starts or ends, and on STOP.
+  - after 10 s of inactivity the backlight turns off and the panel goes to sleep,
+  - the display wakes up when a client connects, when sending starts or ends, and on STOP.
 
 ## Safety
 
@@ -123,17 +131,20 @@ pio run -e atoms3-lite -t upload
 
 ### Hardware checklist
 
+Tested so far on AtomS3 Lite and AtomS3; Atom Lite hasn't been tested on hardware yet. The ticked items were checked through the protocol; the keying output on the jack hasn't been measured yet.
+
 - [ ] Measure the jack after power-on and after a reset: the output must be open.
-- [ ] From nRF Connect, `SEND CQ CQ DE OK1CDJ` is sent correctly (character and word gaps).
-- [ ] A command longer than 20 bytes is assembled correctly.
-- [ ] The button in the middle of a message stops keying immediately.
-- [ ] Disconnecting the phone in the middle of a message stops keying immediately.
+- [x] Over BLE, `SEND CQ CQ DE OK1CDJ` is sent correctly (character and word gaps).
+- [x] A command longer than 20 bytes is assembled correctly.
+- [x] The button (on the AtomS3, the screen) in the middle of a message stops keying immediately.
+- [x] Disconnecting the phone in the middle of a message stops keying immediately.
 - [ ] Watchdog: a test build `PLATFORMIO_BUILD_FLAGS=-DWATCHDOG_TEST=1 pio run -e atoms3-lite -t upload` holds the first element down. After 5 s the output must open and `ERR watchdog` must arrive.
 - [ ] Switching modes with the button shows the right LED colours.
-- [ ] `WIFI` over BLE stores the credentials, and HTTP mode connects after the restart.
-- [ ] `/sendmorse` works as in v1.
-- [ ] Battery Service percentage matches the measured voltage.
-- [ ] cwdaemon from Tucnak: sending, speed and abort.
+- [x] `WIFI` over BLE stores the credentials, and HTTP mode connects after the restart.
+- [x] `/sendmorse` works as in v1: `speed` applies immediately and `message` replaces what is being sent.
+- [ ] Battery Service percentage matches the voltage measured with a multimeter (the keyer logs `[bat] <mV> <%>` on the serial port).
+- [x] cwdaemon over UDP 6789: text, `ESC 2` (speed) and `ESC 4` (abort). Timing matches PARIS.
+- [ ] cwdaemon from Tucnak.
 
 ## License
 
