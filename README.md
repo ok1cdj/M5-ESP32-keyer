@@ -139,7 +139,7 @@ Tested so far on AtomS3 Lite and AtomS3; Atom Lite hasn't been tested on hardwar
 - [x] The button (on the AtomS3, the screen) in the middle of a message stops keying immediately.
 - [x] Disconnecting the phone in the middle of a message stops keying immediately.
 - [ ] Watchdog: a test build `PLATFORMIO_BUILD_FLAGS=-DWATCHDOG_TEST=1 pio run -e atoms3-lite -t upload` holds the first element down. After 5 s the output must open and `ERR watchdog` must arrive.
-- [ ] Switching modes with the button shows the right LED colours.
+- [x] Switching modes with the button at power-on works (LED colours on the Lite boards, mode name on the AtomS3).
 - [x] `WIFI` over BLE stores the credentials, and HTTP mode connects after the restart.
 - [x] `/sendmorse` works as in v1: `speed` applies immediately and `message` replaces what is being sent.
 - [ ] Battery Service percentage matches the voltage measured with a multimeter (the keyer logs `[bat] <mV> <%>` on the serial port).
