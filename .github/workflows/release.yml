@@ -1,0 +1,70 @@
+name: Release firmware
+
+# Runs only on a version tag. Builds all boards and attaches the merged
+# images to the GitHub Release for that tag; the page deploy (pages.yml)
+# picks them up from there. Does NOT touch GitHub Pages.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write # create the release / upload the assets
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check tag matches FW_VERSION
+        run: |
+          set -euo pipefail
+          FW=$(sed -n 's/^#define FW_VERSION "\(.*\)"/\1/p' src/version.h)
+          if [ "v${FW}" != "${GITHUB_REF_NAME}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match FW_VERSION ${FW} in src/version.h" >&2
+            exit 1
+          fi
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            .pio/libdeps
+          key: pio-release-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            pio-release-${{ runner.os }}-
+
+      - name: Install PlatformIO
+        # Pinned to the Core version pioarduino 55.03.312-1 is tested with
+        # (it requires >= 6.2.0).
+        run: pip install platformio==6.2.0
+
+      - name: Host tests
+        run: pio test -e native
+
+      - name: Build firmware
+        run: pio run -e atom-lite -e atoms3-lite -e atoms3
+
+      - name: Attach firmware to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          for ENV in atom-lite atoms3-lite atoms3; do
+            cp ".pio/build/${ENV}/firmware.factory.bin" "keyer-${ENV}.factory.bin"
+          done
+          # Create the release if the tag doesn't have one yet, then upload.
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "$TAG" --notes "M5-ESP32-keyer firmware $TAG for Atom Lite, AtomS3 Lite and AtomS3."
+          fi
+          gh release upload "$TAG" keyer-*.factory.bin --clobber

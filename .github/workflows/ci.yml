@@ -1,0 +1,59 @@
+name: CI
+
+# Builds every board and runs the host tests of the keyer core on each push
+# and pull request. Releases are handled by release.yml.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-native-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+          restore-keys: pio-native-${{ runner.os }}-
+      - name: Install PlatformIO
+        # Pinned to the Core version pioarduino 55.03.312-1 is tested with
+        # (it requires >= 6.2.0).
+        run: pip install platformio==6.2.0
+      - name: Host tests (keyer core, protocol)
+        run: pio test -e native
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [atom-lite, atoms3-lite, atoms3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.platformio
+            .pio/libdeps
+          key: pio-${{ matrix.env }}-${{ runner.os }}-${{ hashFiles('platformio.ini') }}
+          restore-keys: pio-${{ matrix.env }}-${{ runner.os }}-
+      - name: Install PlatformIO
+        # Pinned to the Core version pioarduino 55.03.312-1 is tested with
+        # (it requires >= 6.2.0).
+        run: pip install platformio==6.2.0
+      - name: Build ${{ matrix.env }}
+        run: pio run -e ${{ matrix.env }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: keyer-${{ matrix.env }}
+          path: .pio/build/${{ matrix.env }}/firmware.factory.bin

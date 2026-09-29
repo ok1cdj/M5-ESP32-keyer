@@ -1,0 +1,19 @@
+{
+  "name": "M5-ESP32-keyer (Atom Lite / AtomS3 Lite)",
+  "version": "0.0.0-dev",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "firmware/keyer-atom-lite.factory.bin", "offset": 0 }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        { "path": "firmware/keyer-atoms3-lite.factory.bin", "offset": 0 }
+      ]
+    }
+  ]
+}
