@@ -21,10 +21,24 @@ volatile bool wakePending = false;
 uint32_t darkAt = 0;
 uint32_t lastActivity = 0;
 std::string shown;
+bool asleep = false;  // panel in sleep mode, backlight off
 
 void wake() {
+    if (asleep) {
+        M5.Display.wakeup();
+        asleep = false;
+        shown.clear();  // redraw what changed while the panel slept
+    }
     M5.Display.setBrightness(BRIGHTNESS);
     darkAt = millis() + BACKLIGHT_MS;
+}
+
+// Backlight off alone leaves the panel controller running (~10 mA);
+// sleep mode stops it as well.
+void dark() {
+    M5.Display.setBrightness(0);
+    M5.Display.sleep();
+    asleep = true;
 }
 
 std::string content() {
@@ -89,7 +103,7 @@ void begin() {
 
 void showModeChoice(proto::Mode m) {
     auto& d = M5.Display;
-    d.setBrightness(BRIGHTNESS);
+    wake();
     d.fillScreen(TFT_BLACK);
     d.setTextColor(TFT_WHITE, TFT_BLACK);
     d.setTextDatum(middle_center);
@@ -120,12 +134,12 @@ void loop() {
         wake();
     }
     std::string c = content();
-    if (c != shown) {
+    if (!asleep && c != shown) {
         shown = c;
         draw(c);
     }
     if (darkAt != 0 && int32_t(millis() - darkAt) >= 0) {
-        M5.Display.setBrightness(0);
+        dark();
         darkAt = 0;
     }
 }

@@ -103,9 +103,10 @@ Measured with a USB meter at 5 V, without the battery base. 30 mA is about 4 h o
 |---|---|---|---|
 | Atom Lite | _TBD_ mA | _TBD_ mA | _TBD_ mA |
 | AtomS3 Lite | ~30 mA | ~30 mA | ~30 mA |
-| AtomS3 (display on / off) | _TBD_ mA | _TBD_ mA | _TBD_ mA |
+| AtomS3, backlight off | ~40 mA | ~40 mA | ~40 mA |
+| AtomS3, backlight on | ~70 mA | ~70 mA | ~70 mA |
 
-AtomS3 Lite was measured with a slow USB meter: the average is about 30 mA in all three states, with short peaks up to about 50 mA from the radio at BLE events. "Sending" was measured without an optocoupler, which adds about 6 mA while keyed.
+AtomS3 Lite was measured with a slow USB meter: the average is about 30 mA in all three states, with short peaks up to about 50 mA from the radio at BLE events. "Sending" was measured without an optocoupler, which adds about 6 mA while keyed. The AtomS3 backlight is on only for 10 s after a change, so it runs at about 40 mA most of the time, which is about 3 h on the battery base.
 
 ## Building
 
