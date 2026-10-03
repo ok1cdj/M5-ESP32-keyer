@@ -97,6 +97,7 @@ void Core::advance(Output& out) {
         }
         if (gen_.load(item)) {
             current_ = true;
+            currentChar_ = char(item & CHAR_MASK);
             keyOn(out, gen_.nextElementUs());
             return;
         }
@@ -105,6 +106,13 @@ void Core::advance(Output& out) {
     current_ = false;
     state_ = State::Idle;
     notify(out, Notice::Done);
+}
+
+size_t Core::pending(char* out, size_t max) const {
+    size_t n = 0;
+    if (current_ && n < max) out[n++] = currentChar_;
+    for (size_t i = 0; i < queue_.size() && n < max; i++) out[n++] = char(queue_.at(i) & CHAR_MASK);
+    return n;
 }
 
 void Core::keyOn(Output& out, uint32_t us) {

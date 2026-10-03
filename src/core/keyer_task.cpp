@@ -54,6 +54,10 @@ NotifyFn notifier;
 keyer::Core core;
 std::atomic<uint32_t> packedSnapshot{0};
 std::atomic<uint32_t> activity{0};
+// Start of the text still to send, for the display. Written by the keyer task,
+// read by loop() on the other core.
+char pendingBuf[PENDING_MAX + 1];
+portMUX_TYPE pendingLock = portMUX_INITIALIZER_UNLOCKED;
 
 // Only the header of an Item is copied for events without text.
 constexpr size_t HEADER = offsetof(Item, text);
@@ -100,6 +104,12 @@ void publishSnapshot() {
     uint32_t remaining = core.remaining();
     if (remaining > 0xFFFF) remaining = 0xFFFF;
     packedSnapshot.store((sending ? 1u : 0u) << 31 | remaining << 8 | core.wpm());
+    char buf[PENDING_MAX];
+    size_t n = core.pending(buf, PENDING_MAX);
+    portENTER_CRITICAL(&pendingLock);
+    memcpy(pendingBuf, buf, n);
+    pendingBuf[n] = '\0';
+    portEXIT_CRITICAL(&pendingLock);
 }
 
 void emit(const char* line) {
@@ -243,6 +253,12 @@ bool postWpm(uint8_t wpm) { return post(coreItem(keyer::EventType::WpmSet, 0, wp
 Snapshot snapshot() {
     uint32_t p = packedSnapshot.load();
     return Snapshot{(p >> 31) != 0, uint16_t((p >> 8) & 0xFFFF), uint8_t(p & 0xFF)};
+}
+
+void pendingText(char* out) {
+    portENTER_CRITICAL(&pendingLock);
+    memcpy(out, pendingBuf, sizeof(pendingBuf));
+    portEXIT_CRITICAL(&pendingLock);
 }
 
 uint32_t activityCounter() { return activity.load(); }

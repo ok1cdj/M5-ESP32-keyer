@@ -81,8 +81,8 @@ The same on all boards. On the AtomS3, pressing the screen is the button.
 - **Client connects or disconnects:** a short blink.
 - **Button press:** a short blink, so you can see the press was registered.
 - **AtomS3 display:**
-  - shows the mode, IP address, WPM, battery and the number of characters left to send (`TX 14`),
-  - after 10 s of inactivity the backlight turns off and the panel goes to sleep,
+  - shows the mode, IP address, WPM, battery and, while sending, the next 10 characters of the text, the one being sent in red (prosigns without brackets),
+  - after 10 s of inactivity the backlight turns off and the panel goes to sleep; it stays on while sending,
   - the display wakes up when a client connects, when sending starts or ends, and on STOP.
 
 ## Safety

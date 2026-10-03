@@ -97,6 +97,10 @@ public:
     // Characters not yet fully sent (the one being sent included).
     size_t remaining() const { return queue_.size() + (current_ ? 1 : 0); }
 
+    // The same characters as text for a display: at most max of them, the
+    // one being sent first, prosign letters without brackets. Returns the count.
+    size_t pending(char* out, size_t max) const;
+
 private:
     void onText(const Event& ev, Output& out);
     void onTimer(Output& out);
@@ -111,6 +115,7 @@ private:
     TextQueue queue_;
     bool keyed_ = false;
     bool current_ = false;    // a character is being sent
+    char currentChar_ = 0;    // valid while current_
     bool afterChar_ = false;  // last gap was a character gap (3 dits)
     uint32_t timerGen_ = 0;
     uint32_t keyGen_ = 0;

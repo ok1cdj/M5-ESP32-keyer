@@ -27,6 +27,11 @@ struct Snapshot {
 };
 Snapshot snapshot();
 
+// Copies up to PENDING_MAX characters still to send (the one being sent
+// first), NUL-terminated, into out[PENDING_MAX + 1]. Empty when idle.
+constexpr size_t PENDING_MAX = 16;
+void pendingText(char* out);
+
 // Incremented on every state change the UI should react to (start, end, STOP).
 uint32_t activityCounter();
 

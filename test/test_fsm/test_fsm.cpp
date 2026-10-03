@@ -178,6 +178,32 @@ void test_remaining_counts_characters() {
     TEST_ASSERT_EQUAL(0, s.core.remaining());
 }
 
+std::string pendingText(const Core& c, size_t max) {
+    char buf[16];
+    return std::string(buf, c.pending(buf, max < sizeof(buf) ? max : sizeof(buf)));
+}
+
+void test_pending_follows_sending() {
+    Sim s;
+    s.text("E <AR> T");
+    TEST_ASSERT_EQUAL_STRING("E AR T", pendingText(s.core, 16).c_str());
+    TEST_ASSERT_EQUAL_STRING("E A", pendingText(s.core, 3).c_str());
+    s.tick();  // dit of E done, character gap: E is no longer pending
+    TEST_ASSERT_EQUAL_STRING(" AR T", pendingText(s.core, 16).c_str());
+    TEST_ASSERT_EQUAL(s.core.remaining(), pendingText(s.core, 16).size());
+    s.tick();  // character gap done, word gap: the space is consumed
+    TEST_ASSERT_EQUAL_STRING("AR T", pendingText(s.core, 16).c_str());
+    s.runToEnd();
+    TEST_ASSERT_EQUAL_STRING("", pendingText(s.core, 16).c_str());
+}
+
+void test_stop_clears_pending() {
+    Sim s;
+    s.text("CQ CQ");
+    s.send(EventType::Stop);
+    TEST_ASSERT_EQUAL_STRING("", pendingText(s.core, 16).c_str());
+}
+
 void test_stop_in_every_state() {
     const EventType stops[] = {EventType::Stop, EventType::ButtonDown};
     for (EventType stop : stops) {
@@ -297,6 +323,8 @@ int main() {
     RUN_TEST(test_unsupported_char_reported_once);
     RUN_TEST(test_text_appended_while_sending);
     RUN_TEST(test_remaining_counts_characters);
+    RUN_TEST(test_pending_follows_sending);
+    RUN_TEST(test_stop_clears_pending);
     RUN_TEST(test_stop_in_every_state);
     RUN_TEST(test_stale_timer_after_stop_does_not_key);
     RUN_TEST(test_watchdog_opens_output);

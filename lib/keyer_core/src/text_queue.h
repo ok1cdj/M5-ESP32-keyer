@@ -30,6 +30,9 @@ public:
         count_ = 0;
     }
 
+    // Item i places from the front (i < size()), without removing it.
+    uint8_t at(size_t i) const { return buf_[(head_ + i) % CAPACITY]; }
+
     size_t size() const { return count_; }
     bool empty() const { return count_ == 0; }
 
