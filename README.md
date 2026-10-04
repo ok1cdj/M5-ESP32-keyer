@@ -13,11 +13,13 @@ Protocol for clients (kQSO, nRF Connect, scripts): [PROTOCOL.md](PROTOCOL.md)
 
 | board | chip | key output | paddles (reserved) | battery ADC | display |
 |---|---|---|---|---|---|
-| M5 **AtomS3 Lite** | ESP32-S3 | G5 | G6 dot, G7 dash | G8 | – |
-| M5 **Atom Lite** | ESP32-PICO-D4 | G22 | G19 dot, G23 dash | G33 | – |
-| M5 **AtomS3** | ESP32-S3 | G5 | G6 dot, G7 dash | G8 | 128×128 |
+| M5 **AtomS3 Lite** | ESP32-S3 | G2 (Grove) | G6 dot, G7 dash | G8 | – |
+| M5 **Atom Lite** | ESP32-PICO-D4 | G26 (Grove) | G19 dot, G23 dash | G33 | – |
+| M5 **AtomS3** | ESP32-S3 | G2 (Grove) | G6 dot, G7 dash | G8 | 128×128 |
 
-- **Same wiring on every board.** The functions sit on the same positions of the side header: `3V3 · KEY · DOT · DASH · BAT` (Atom Lite `G22 G19 G23 G33`, AtomS3 `G5 G6 G7 G8`).
+- **Same wiring on every board.** The functions sit on the same positions on all boards:
+  - **Grove** (to the radio): `GND · 5V · CIV · KEY`. KEY is the SDA pin (Atom Lite G26, AtomS3 G2). The SCL pin (G32 / G1) is reserved for a planned CI-V interface.
+  - **Side header** (paddles, battery): `DOT · DASH · BAT` (Atom Lite `G19 G23 G33`, AtomS3 `G6 G7 G8`).
 - **Safe pins only.** None of them is a strapping pin, so a keyed radio or a pressed paddle can't change the boot mode. None is input-only, so the paddles get internal pull-ups.
 - **Battery.** All boards fit the **Atomic Battery Base** (200 mAh), which reads the battery voltage through a 1:2 divider on the BAT pin.
 
