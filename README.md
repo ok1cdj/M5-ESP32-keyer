@@ -54,7 +54,7 @@ KEY pin ──[ 100 Ω ]──┬──► gate                 drain  ──►
 - The 10 kΩ gate-source resistor is also the pull-down: the MOSFET stays off while the pin is floating during a reset.
 - Mind the polarity: the drain goes to the tip. Swapped, the body diode keys the radio permanently.
 
-Only variant A has been tested so far, on a modern transceiver whose key input has a few volts and milliamps. For an old radio with a high voltage on the key line (tube rigs, negative grid-block keying) use neither variant directly; add a relay or a suitable high-voltage keying circuit.
+Both variants have been tested on a modern transceiver whose key input has a few volts and milliamps. For an old radio with a high voltage on the key line (tube rigs, negative grid-block keying) use neither variant directly; add a relay or a suitable high-voltage keying circuit.
 
 **Paddles (next phase).** A separate 3.5 mm jack: tip = dot, ring = dash, sleeve = GND. The contacts switch to GND and are idle high. The firmware doesn't read them yet, but plan the second jack in your enclosure.
 
@@ -155,7 +155,7 @@ pio run -e atoms3-lite -t upload
 
 ### Hardware checklist
 
-Tested so far on AtomS3 Lite, AtomS3 and Atom Lite. Real keying of a radio through the Grove port and the PC817 was checked on the AtomS3 (over BLE) and the Atom Lite (over cwdaemon); the AtomS3 Lite has the same pin as the AtomS3 but hasn't keyed a radio yet.
+Tested so far on AtomS3 Lite, AtomS3 and Atom Lite. Real keying of a radio through the Grove port, with both the PC817 and the N-MOSFET, was checked on the AtomS3 (over BLE) and the Atom Lite (over cwdaemon); the AtomS3 Lite has the same pin as the AtomS3 but hasn't keyed a radio yet.
 
 - [x] The radio keys correctly at 20 WPM (PARIS).
 - [x] The output stays open after power-on and after a reset, including a reset in the middle of a message.
