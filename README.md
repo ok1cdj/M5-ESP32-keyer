@@ -170,7 +170,7 @@ Tested so far on AtomS3 Lite, AtomS3 and Atom Lite. Real keying of a radio throu
 - [x] `/sendmorse` works as in v1: `speed` applies immediately and `message` replaces what is being sent.
 - [ ] Battery Service percentage matches the voltage measured with a multimeter (the keyer logs `[bat] <mV> <%>` on the serial port).
 - [x] cwdaemon over UDP 6789: text, `ESC 2` (speed) and `ESC 4` (abort). Timing matches PARIS.
-- [ ] cwdaemon from Tucnak.
+- [x] cwdaemon from Tucnak.
 
 ## License
 
