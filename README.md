@@ -1,6 +1,6 @@
 # M5-ESP32-keyer v2
 
-CW keyer for the **M5Stack Atom** family by OK1CDJ. Send it text, and it keys the radio on its own through an optocoupler. The text comes from one of three modes: **BLE**, **HTTP** or **cwdaemon**.
+CW keyer for the **M5Stack Atom** family by OK1CDJ. Send it text, and it keys the radio on its own through an optocoupler or a MOSFET. The text comes from one of three modes: **BLE**, **HTTP** or **cwdaemon**.
 
 **Install and configure from the browser:** https://keyer.ok1cdj.com
 
@@ -25,6 +25,10 @@ Protocol for clients (kQSO, nRF Connect, scripts): [PROTOCOL.md](PROTOCOL.md)
 
 ## Wiring
 
+The KEY pin drives the radio's key input through a 3.5 mm jack: tip = key, sleeve = GND. Use one of two variants.
+
+**A: optocoupler (isolated).** The keyer and the radio share no ground. Use it when the radio's ground could be at a different potential, for example a radio on a separate supply or with a computer on the same cable.
+
 ```
 KEY pin ──[ 330 Ω ]──┬──► PC817 anode (1)          PC817 collector (4) ──► jack tip   (key)
                      │    PC817 cathode (2) ─ GND   PC817 emitter   (3) ──► jack sleeve (GND)
@@ -33,9 +37,26 @@ KEY pin ──[ 330 Ω ]──┬──► PC817 anode (1)          PC817 collec
                     GND
 ```
 
-- **Keying.** GPIO → 330 Ω → optocoupler LED (about 6 mA). The transistor side goes to the radio's key input through a 3.5 mm jack: tip = key, sleeve = GND.
+- GPIO → 330 Ω → optocoupler LED (about 6 mA). The transistor side switches the key input.
 - **10 kΩ pull-down** on the KEY pin (recommended). The firmware opens the output before anything else starts, but during a reset the pin is briefly floating, and the resistor holds it low regardless of the firmware.
-- **Paddles (next phase).** A separate 3.5 mm jack: tip = dot, ring = dash, sleeve = GND. The contacts switch to GND and are idle high. The firmware doesn't read them yet, but plan the second jack in your enclosure.
+
+**B: N-MOSFET (shared ground).** Fewer parts, and almost no current from the GPIO. The Grove GND is connected to the radio's ground through the jack sleeve.
+
+```
+KEY pin ──[ 100 Ω ]──┬──► gate                 drain  ──► jack tip    (key)
+                     │                         source ──► jack sleeve (GND) ── Grove GND
+                  [10 kΩ]
+                     │
+                    GND (source)
+```
+
+- A logic-level N-MOSFET: **AO3400** (fully on at 3.3 V) or **BSS138**. 100 Ω in the gate, 10 kΩ gate to source.
+- The 10 kΩ gate-source resistor is also the pull-down: the MOSFET stays off while the pin is floating during a reset.
+- Mind the polarity: the drain goes to the tip. Swapped, the body diode keys the radio permanently.
+
+Only variant A has been tested so far, on a modern transceiver whose key input has a few volts and milliamps. For an old radio with a high voltage on the key line (tube rigs, negative grid-block keying) use neither variant directly; add a relay or a suitable high-voltage keying circuit.
+
+**Paddles (next phase).** A separate 3.5 mm jack: tip = dot, ring = dash, sleeve = GND. The contacts switch to GND and are idle high. The firmware doesn't read them yet, but plan the second jack in your enclosure.
 
 ## Modes
 
