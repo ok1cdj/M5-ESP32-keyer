@@ -134,9 +134,11 @@ pio run -e atoms3-lite -t upload
 
 ### Hardware checklist
 
-Tested so far on AtomS3 Lite, AtomS3 and Atom Lite. The ticked items were checked through the protocol; the keying output on the jack hasn't been measured yet.
+Tested so far on AtomS3 Lite, AtomS3 and Atom Lite. Real keying of a radio through the Grove port and the PC817 was checked on the AtomS3 (over BLE) and the Atom Lite (over cwdaemon); the AtomS3 Lite has the same pin as the AtomS3 but hasn't keyed a radio yet.
 
-- [ ] Measure the jack after power-on and after a reset: the output must be open.
+- [x] The radio keys correctly at 20 WPM (PARIS).
+- [x] The output stays open after power-on and after a reset, including a reset in the middle of a message.
+- [x] `STOP` over BLE, the button and `ESC 4` in the middle of a message open the output immediately.
 - [x] Over BLE, `SEND CQ CQ DE OK1CDJ` is sent correctly (character and word gaps).
 - [x] A command longer than 20 bytes is assembled correctly.
 - [x] The button (on the AtomS3, the screen) in the middle of a message stops keying immediately.
