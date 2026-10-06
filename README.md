@@ -168,7 +168,8 @@ Tested so far on AtomS3 Lite, AtomS3 and Atom Lite. Real keying of a radio throu
 - [x] Switching modes with the button at power-on works (LED colours on the Lite boards, mode name on the AtomS3).
 - [x] `WIFI` over BLE stores the credentials, and HTTP mode connects after the restart.
 - [x] `/sendmorse` works as in v1: `speed` applies immediately and `message` replaces what is being sent.
-- [ ] Battery Service percentage matches the voltage measured with a multimeter (the keyer logs `[bat] <mV> <%>` on the serial port).
+- [x] Battery reading on the AtomS3: calibrated against the charger's 4.20 V end of charge (it read 4045 mV before, 4200 mV after, factor 1.038). The keyer logs `[bat] <mV> <%>` on the serial port.
+- [ ] Battery reading on the Atom Lite: not calibrated yet (no correction applied).
 - [x] cwdaemon over UDP 6789: text, `ESC 2` (speed) and `ESC 4` (abort). Timing matches PARIS.
 - [x] cwdaemon from Tucnak.
 
