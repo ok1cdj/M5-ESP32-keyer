@@ -13,7 +13,8 @@ constexpr int SAMPLES = 16;
 
 // The base's divider is 2 x 1 MOhm, and the ADC reads that high source impedance
 // low. Measured on an AtomS3 at the charger's 4.20 V end of charge: 4045 mV, so
-// the S3 builds set BAT_CAL_PERMILLE=1038. 1000 means no correction.
+// the S3 builds set BAT_CAL_PERMILLE=1038. The Atom Lite (ESP32) read 4225 mV
+// there and needs no correction. 1000 means no correction.
 #ifndef BAT_CAL_PERMILLE
 #define BAT_CAL_PERMILLE 1000
 #endif
