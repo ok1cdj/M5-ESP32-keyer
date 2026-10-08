@@ -59,15 +59,16 @@ Both variants have been tested on a modern transceiver whose key input has a few
 **CI-V (Icom, frequency and mode).** One more 3.5 mm jack to the radio's REMOTE (CI-V) socket: tip = CI-V, sleeve = GND. The bus is one open-collector wire pulled up to 5 V inside the radio, so a BSS138 shifts it to 3.3 V in both directions. Everything comes from the Grove cable, which has 5 V but no 3.3 V. It needs the shared ground of variant B.
 
 ```
-Grove 5V ──[ 10 kΩ ]──┬──[ 15 kΩ ]── GND
+Grove 5V ──[ 10 kΩ ]──┬──[ 27 kΩ ]── GND
                       │
-                    gate (about 3 V)
+                    gate (about 3.6 V)
                       │
-CIV pin ──────── source  BSS138  drain ──► REMOTE tip    (CI-V)
+CIV pin ──────── source  BSS138 / 2N7000  drain ──► REMOTE tip    (CI-V)
                                            REMOTE sleeve (GND) ── Grove GND
 ```
 
-- **Gate at about 3 V from a divider.** The gate takes no current, so two resistors replace a 3.3 V supply. 10 k / 15 k gives 3.0 V; anything from 2.7 to 3.3 V works.
+- **Gate at about 3.6 V from a divider.** The gate takes no current, so two resistors replace a 3.3 V supply. 10 k / 27 k gives 3.65 V. The gate voltage must stay below about 4 V: the MOSFET can then lift the CIV pin to at most Vg − Vth(min) = 4 − 0.8 V, under 3.3 V.
+- **BSS138 or 2N7000.** The 2N7000 has a threshold of up to 3 V, so it needs the 3.6 V; the BSS138 would also work with a gate as low as 2.7 V.
 - **No pull-up resistor on the keyer side.** The firmware turns on the ESP32's internal pull-up on the CIV pin, which is plenty at 19200 Bd. An external pull-up to 3.3 V would work too, but the Grove has no 3.3 V and the divider is too weak to feed one.
 - When the radio pulls the line low, the BSS138's body diode and then the channel pull the CIV pin low. When the keyer pulls the pin low, the channel conducts and pulls the radio's line low. Idle, the CIV pin sits at 3.3 V and the radio's line at 5 V. The ESP32 never sees 5 V.
 - With the keyer switched off the divider has no voltage, the BSS138 stays off and the radio's bus is left alone.
