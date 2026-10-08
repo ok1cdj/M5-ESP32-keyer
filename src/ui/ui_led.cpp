@@ -43,6 +43,8 @@ void buttonPressed() { blinkPending = true; }
 
 void setAddress(const std::string&) {}
 
+void setRadio(const std::string&) {}
+
 void loop() {
     if (blinkPending) {
         blinkPending = false;

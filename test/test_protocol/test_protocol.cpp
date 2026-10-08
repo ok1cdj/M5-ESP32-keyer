@@ -122,6 +122,55 @@ void test_ble_only_commands() {
     TEST_ASSERT_TRUE(parse("APIKEY", Mode::Ble).cmd == Cmd::ApiKey);
 }
 
+void test_parse_freq_and_civ() {
+    TEST_ASSERT_TRUE(parse("FREQ", Mode::Http).cmd == Cmd::Freq);
+    TEST_ASSERT_EQUAL_STRING("arg", parse("FREQ 7000", Mode::Ble).error);
+    Command on = parse("freq on", Mode::Ble);
+    TEST_ASSERT_TRUE(on.cmd == Cmd::FreqWatch);
+    TEST_ASSERT_TRUE(on.watch);
+    TEST_ASSERT_FALSE(parse("FREQ OFF", Mode::Ble).watch);
+    TEST_ASSERT_EQUAL_STRING("mode", parse("FREQ ON", Mode::Http).error);
+
+    Command q = parse("CIV", Mode::Cwd);  // reading works everywhere
+    TEST_ASSERT_TRUE(q.cmd == Cmd::Civ);
+    TEST_ASSERT_TRUE(q.civQuery);
+    TEST_ASSERT_TRUE(parse("civ off", Mode::Ble).civ.mode == civ::LinkMode::Off);
+    TEST_ASSERT_TRUE(parse("CIV AUTO", Mode::Ble).civ.mode == civ::LinkMode::Auto);
+    Command f = parse("CIV 9600 5e", Mode::Ble);
+    TEST_ASSERT_TRUE(f.cmd == Cmd::Civ);
+    TEST_ASSERT_FALSE(f.civQuery);
+    TEST_ASSERT_TRUE(f.civ.mode == civ::LinkMode::Fixed);
+    TEST_ASSERT_EQUAL_UINT32(9600, f.civ.baud);
+    TEST_ASSERT_EQUAL_HEX8(0x5E, f.civ.rig);
+    TEST_ASSERT_TRUE(parse("CIV 19200 94", Mode::Ble).cmd == Cmd::Civ);
+
+    TEST_ASSERT_EQUAL_STRING("mode", parse("CIV OFF", Mode::Http).error);
+    TEST_ASSERT_EQUAL_STRING("arg", parse("CIV ON", Mode::Ble).error);
+    TEST_ASSERT_EQUAL_STRING("arg", parse("CIV 9600", Mode::Ble).error);
+    TEST_ASSERT_EQUAL_STRING("arg", parse("CIV 9600 5G", Mode::Ble).error);
+    TEST_ASSERT_EQUAL_STRING("arg", parse("CIV 9600 158", Mode::Ble).error);
+    TEST_ASSERT_EQUAL_STRING("range", parse("CIV 2400 58", Mode::Ble).error);
+    TEST_ASSERT_EQUAL_STRING("range", parse("CIV 9600 00", Mode::Ble).error);
+    TEST_ASSERT_EQUAL_STRING("range", parse("CIV 9600 E0", Mode::Ble).error);
+}
+
+void test_parse_civ_tunnel() {
+    Command t = parse("CIVTX FEFEA4E00500500214" "00FD", Mode::Ble);
+    TEST_ASSERT_TRUE(t.cmd == Cmd::CivTx);
+    TEST_ASSERT_EQUAL(11, (int)t.frame.size());
+    TEST_ASSERT_EQUAL_HEX8(0x05, t.frame[4]);
+    TEST_ASSERT_EQUAL_STRING("arg", parse("CIVTX", Mode::Ble).error);
+    TEST_ASSERT_EQUAL_STRING("arg", parse("CIVTX FEFEA4E003", Mode::Ble).error);
+    TEST_ASSERT_EQUAL_STRING("arg", parse("CIVTX FE FE A4 E0 03 FD", Mode::Ble).error);
+    TEST_ASSERT_EQUAL_STRING("mode", parse("CIVTX FEFEA4E003FD", Mode::Http).error);
+    Command r = parse("civrx on", Mode::Ble);
+    TEST_ASSERT_TRUE(r.cmd == Cmd::CivRx);
+    TEST_ASSERT_TRUE(r.watch);
+    TEST_ASSERT_FALSE(parse("CIVRX OFF", Mode::Ble).watch);
+    TEST_ASSERT_EQUAL_STRING("arg", parse("CIVRX", Mode::Ble).error);
+    TEST_ASSERT_EQUAL_STRING("mode", parse("CIVRX ON", Mode::Cwd).error);
+}
+
 void test_formatting() {
     TEST_ASSERT_EQUAL_STRING("IDLE WPM 22", formatStatus(false, 0, 22).c_str());
     TEST_ASSERT_EQUAL_STRING("SENDING 14 WPM 22", formatStatus(true, 14, 22).c_str());
@@ -138,6 +187,8 @@ int main() {
     RUN_TEST(test_parse_simple_commands);
     RUN_TEST(test_parse_wifi);
     RUN_TEST(test_ble_only_commands);
+    RUN_TEST(test_parse_freq_and_civ);
+    RUN_TEST(test_parse_civ_tunnel);
     RUN_TEST(test_formatting);
     return UNITY_END();
 }

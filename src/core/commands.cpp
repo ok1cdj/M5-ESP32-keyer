@@ -2,7 +2,10 @@
 
 #include <Arduino.h>
 
+#include <atomic>
+
 #include "core/keyer_task.h"
+#include "radio/radio.h"
 #include "settings.h"
 #include "version.h"
 
@@ -12,6 +15,8 @@ namespace {
 
 constexpr uint32_t RESTART_DELAY_MS = 300;
 volatile uint32_t restartAt = 0;
+std::atomic<bool> watch{false};
+std::atomic<bool> freqRequest{false};
 
 }  // namespace
 
@@ -42,11 +47,47 @@ std::string execute(const std::string& line, proto::Mode active) {
         case proto::Cmd::ApiKey:
             settings::setApiKey(c.text);
             return "OK";
+        case proto::Cmd::Freq: {
+            civ::State st = radio::snapshot().state;
+            return civ::formatFreq(st.valid, st.hz, st.mode);
+        }
+        case proto::Cmd::FreqWatch:
+            watch = c.watch;
+            freqRequest = c.watch;
+            return "OK";
+        case proto::Cmd::CivTx:
+            switch (radio::sendFrame(c.frame.data(), c.frame.size())) {
+                case radio::TxResult::Ok: return "OK";
+                case radio::TxResult::NoRig: return "ERR norig";
+                case radio::TxResult::Busy: break;
+            }
+            return "ERR busy";
+        case proto::Cmd::CivRx:
+            radio::setTap(c.watch);
+            return "OK";
+        case proto::Cmd::Civ:
+            if (c.civQuery) {
+                radio::Snapshot s = radio::snapshot();
+                return civ::formatLink(s.cfg, s.state);
+            }
+            settings::setCivConfig(c.civ);
+            radio::configure(c.civ);
+            return "OK";
         case proto::Cmd::Error:
             break;
     }
     return std::string("ERR ") + c.error;
 }
+
+bool freqWatch() { return watch; }
+
+void resetSession() {
+    watch = false;
+    freqRequest = false;
+    radio::setTap(false);
+}
+
+bool takeFreqRequest() { return freqRequest.exchange(false); }
 
 void restartIfRequested() {
     if (restartAt != 0 && int32_t(millis() - restartAt) >= 0) ESP.restart();

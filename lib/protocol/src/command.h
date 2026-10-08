@@ -5,6 +5,9 @@
 #include <stdint.h>
 
 #include <string>
+#include <vector>
+
+#include "civ.h"
 
 namespace proto {
 
@@ -26,6 +29,11 @@ enum class Cmd : uint8_t {
     Wifi,
     SetMode,
     ApiKey,
+    Freq,
+    FreqWatch,  // FREQ ON / OFF: `watch`
+    Civ,    // civQuery, or set `civ`
+    CivTx,  // a CI-V frame for the radio: `frame`
+    CivRx,  // CIVRX ON / OFF: `watch`
     Error,  // answer with "ERR " + error
 };
 
@@ -36,10 +44,14 @@ struct Command {
     std::string password;    // WIFI password
     int wpm = 0;
     Mode mode = Mode::Ble;
+    bool watch = false;
+    bool civQuery = false;
+    civ::Config civ;
+    std::vector<uint8_t> frame;  // CIVTX, checked by civ::addressFrame
 };
 
-// Parses one line. `active` is the running mode: WIFI, MODE and APIKEY are
-// accepted only over BLE.
+// Parses one line. `active` is the running mode: WIFI, MODE, APIKEY and CIV with
+// arguments are accepted only over BLE.
 Command parse(const std::string& line, Mode active);
 
 // Response formatting shared by all transports.

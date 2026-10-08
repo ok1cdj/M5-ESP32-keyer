@@ -14,6 +14,7 @@ void showMode(proto::Mode m);        // after start, then dark
 void clientEvent();                  // client connected / disconnected; any task
 void buttonPressed();                // button pressed (after debounce); any task
 void setAddress(const std::string& address);
+void setRadio(const std::string& text);  // frequency and mode, "" = none; from loop()
 void loop();
 
 }  // namespace ui

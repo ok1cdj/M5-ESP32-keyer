@@ -3,6 +3,8 @@
 #include <Arduino.h>
 #include <NimBLEDevice.h>
 
+#include <mutex>
+
 #include "battery.h"
 #include "core/commands.h"
 #include "core/keyer_task.h"
@@ -75,9 +77,12 @@ public:
     void notify(const char* line) override { send(line); }
 
 private:
-    // Lines go out terminated by "\n", split to the negotiated MTU.
+    // Lines go out terminated by "\n", split to the negotiated MTU. Called
+    // from the BLE host (responses), the keyer task and loop() (FREQ); the
+    // lock keeps the chunks of one line together.
     void send(const std::string& line) {
         if (!connected_) return;
+        std::lock_guard<std::mutex> guard(sendLock_);
         std::string data = line + "\n";
         uint16_t mtu = server_->getPeerMTU(connHandle_);
         size_t chunk = mtu > 3 ? mtu - 3 : 20;
@@ -100,6 +105,7 @@ private:
         connHandle_ = info.getConnHandle();
         connected_ = true;
         assembler_.reset();
+        commands::resetSession();
         ui::clientEvent();
         Serial.println("[ble] connected");
     }
@@ -107,6 +113,7 @@ private:
     // Safety rule 4: a lost connection stops the transmission.
     void onDisconnect(NimBLEServer*, NimBLEConnInfo&, int reason) override {
         connected_ = false;
+        commands::resetSession();
         keyer_task::postStop();
         assembler_.reset();
         ui::clientEvent();
@@ -124,6 +131,7 @@ private:
     uint8_t batteryShown_ = 0;
     volatile bool connected_ = false;
     uint16_t connHandle_ = 0;
+    std::mutex sendLock_;
     proto::LineAssembler assembler_{onLine, this};
 };
 

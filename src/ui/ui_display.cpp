@@ -16,12 +16,12 @@ constexpr int MARGIN = 4;
 
 // One status item per line. Each line is redrawn on its own: clearing the
 // whole screen before every update makes it flicker.
-enum Line { MODE, ADDRESS, WPM, BATTERY, TICKER, LINES };
+enum Line { MODE, ADDRESS, WPM, BATTERY, TICKER, RADIO, LINES };
 struct LineLayout {
     int y;
     uint8_t size;  // text size, the built-in font is 6x8 per unit
 };
-constexpr LineLayout LAYOUT[LINES] = {{4, 3}, {34, 1}, {48, 2}, {70, 2}, {92, 2}};
+constexpr LineLayout LAYOUT[LINES] = {{4, 3}, {34, 1}, {48, 2}, {70, 2}, {92, 2}, {114, 1}};
 constexpr int BATTERY_TEXT_X = 56;
 // Characters of the ticker that fit the 128 px width at text size 2.
 constexpr size_t TICKER_CHARS = 10;
@@ -32,6 +32,7 @@ proto::Mode mode = proto::Mode::Ble;
 char address[40];
 portMUX_TYPE addressLock = portMUX_INITIALIZER_UNLOCKED;
 volatile bool wakePending = false;
+std::string radio;  // set from loop() like ui::loop(), no lock
 uint32_t darkAt = 0;
 uint32_t lastActivity = 0;
 std::string shown[LINES];
@@ -72,6 +73,7 @@ void content(std::string (&lines)[LINES]) {
     char pending[keyer_task::PENDING_MAX + 1];
     keyer_task::pendingText(pending);
     lines[TICKER] = std::string(pending).substr(0, TICKER_CHARS);
+    lines[RADIO] = radio;
 }
 
 // Text is drawn with its background, the rest of the line is cleared after
@@ -137,6 +139,12 @@ void setAddress(const std::string& a) {
     portENTER_CRITICAL(&addressLock);
     strlcpy(address, a.c_str(), sizeof(address));
     portEXIT_CRITICAL(&addressLock);
+    wakePending = true;
+}
+
+void setRadio(const std::string& text) {
+    if (text == radio) return;
+    radio = text;
     wakePending = true;
 }
 

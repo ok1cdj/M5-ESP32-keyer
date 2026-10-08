@@ -24,18 +24,20 @@ body{font-family:system-ui,sans-serif;max-width:32rem;margin:1rem auto;padding:0
 input,button{font-size:1.1rem;padding:.5rem;border:1px solid #999;border-radius:.4rem;box-sizing:border-box}
 #msg{width:100%;margin-bottom:.5rem}#wpm{width:5rem}
 .row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
-#stop{background:#c00;color:#fff;border-color:#c00}#st{margin-top:1rem;font-family:monospace}
+#stop{background:#c00;color:#fff;border-color:#c00}#st{margin-top:1rem;font-family:monospace}#fq{font-family:monospace}
 </style></head><body>
 <h1>CW keyer</h1>
 <input id="msg" placeholder="CQ CQ DE ..." autofocus>
 <div class="row"><button id="send">Send</button><button id="stop">STOP</button>
 <label>WPM <input id="wpm" type="number" min="5" max="50"></label><button id="set">Set</button></div>
-<div id="st"></div>
+<div id="st"></div><div id="fq"></div>
 <script>
 const key=new URLSearchParams(location.search).get('apikey')||'';
 async function cmd(c){const r=await fetch('/cmd?apikey='+encodeURIComponent(key)+'&c='+encodeURIComponent(c));return r.text();}
 async function status(){const s=await cmd('STATUS');document.getElementById('st').textContent=s;
- const m=s.match(/WPM (\d+)/);const w=document.getElementById('wpm');if(m&&document.activeElement!==w)w.value=m[1];}
+ const m=s.match(/WPM (\d+)/);const w=document.getElementById('wpm');if(m&&document.activeElement!==w)w.value=m[1];
+ const f=(await cmd('FREQ')).match(/^FREQ (\d+) (\S+)/);
+ document.getElementById('fq').textContent=f?(f[1]/1e6).toFixed(5)+' MHz '+f[2]:'';}
 document.getElementById('send').onclick=async()=>{const m=document.getElementById('msg');if(m.value){await cmd('SEND '+m.value);m.value='';status();}};
 document.getElementById('msg').onkeydown=e=>{if(e.key==='Enter')document.getElementById('send').click();};
 document.getElementById('stop').onclick=async()=>{await cmd('STOP');status();};

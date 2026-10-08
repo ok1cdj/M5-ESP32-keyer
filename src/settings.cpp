@@ -49,4 +49,24 @@ void setWifi(const std::string& ssid, const std::string& password) {
 std::string apiKey() { return getString("apikey"); }
 void setApiKey(const std::string& key) { prefs.putString("apikey", key.c_str()); }
 
+civ::Config civConfig() {
+    civ::Config c;
+    uint8_t m = prefs.getUChar("civ", uint8_t(civ::LinkMode::Auto));
+    c.mode = m <= uint8_t(civ::LinkMode::Fixed) ? civ::LinkMode(m) : civ::LinkMode::Auto;
+    if (c.mode == civ::LinkMode::Fixed) {
+        c.baud = prefs.getUInt("civbaud", 0);
+        c.rig = prefs.getUChar("civaddr", 0);
+        if (!civ::validBaud(c.baud) || c.rig == 0) c = civ::Config();
+    }
+    return c;
+}
+
+void setCivConfig(const civ::Config& cfg) {
+    prefs.putUChar("civ", uint8_t(cfg.mode));
+    if (cfg.mode == civ::LinkMode::Fixed) {
+        prefs.putUInt("civbaud", cfg.baud);
+        prefs.putUChar("civaddr", cfg.rig);
+    }
+}
+
 }  // namespace settings

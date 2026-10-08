@@ -18,8 +18,8 @@ Command error(const char* e) {
     return c;
 }
 
-bool parseInt(const std::string& s, int& out) {
-    if (s.empty() || s.size() > 4) return false;
+bool parseInt(const std::string& s, int& out, size_t maxDigits = 4) {
+    if (s.empty() || s.size() > maxDigits) return false;
     int v = 0;
     for (char c : s) {
         if (c < '0' || c > '9') return false;
@@ -27,6 +27,50 @@ bool parseInt(const std::string& s, int& out) {
     }
     out = v;
     return true;
+}
+
+bool parseHex(const std::string& s, int& out) {
+    if (s.empty() || s.size() > 2) return false;
+    int v = 0;
+    for (char c : s) {
+        int d;
+        if (c >= '0' && c <= '9') d = c - '0';
+        else if (c >= 'A' && c <= 'F') d = c - 'A' + 10;
+        else if (c >= 'a' && c <= 'f') d = c - 'a' + 10;
+        else return false;
+        v = v * 16 + d;
+    }
+    out = v;
+    return true;
+}
+
+// CIV, CIV OFF, CIV AUTO, CIV <baud> <hex address>
+Command parseCiv(const std::string& arg) {
+    Command c;
+    c.cmd = Cmd::Civ;
+    std::string u = upper(arg);
+    if (u.empty()) {
+        c.civQuery = true;
+    } else if (u == "OFF") {
+        c.civ.mode = civ::LinkMode::Off;
+    } else if (u == "AUTO") {
+        c.civ.mode = civ::LinkMode::Auto;
+    } else {
+        size_t sp = u.find(' ');
+        if (sp == std::string::npos) return error("arg");
+        int baud, rig;
+        if (!parseInt(u.substr(0, sp), baud, 5) || !parseHex(u.substr(sp + 1), rig)) {
+            return error("arg");
+        }
+        // 00 is the broadcast, E0 and up are controllers.
+        if (!civ::validBaud(uint32_t(baud)) || rig == 0 || rig >= civ::CONTROLLER) {
+            return error("range");
+        }
+        c.civ.mode = civ::LinkMode::Fixed;
+        c.civ.baud = uint32_t(baud);
+        c.civ.rig = uint8_t(rig);
+    }
+    return c;
 }
 
 }  // namespace
@@ -86,6 +130,33 @@ Command parse(const std::string& line, Mode active) {
         if (active != Mode::Ble) return error("mode");
         c.cmd = Cmd::ApiKey;
         c.text = arg;  // empty = authentication off
+    } else if (word == "FREQ" && arg.empty()) {
+        c.cmd = Cmd::Freq;
+    } else if (word == "FREQ") {
+        // Asynchronous FREQ messages only reach BLE clients that ask for them.
+        if (active != Mode::Ble) return error("mode");
+        std::string u = upper(arg);
+        if (u != "ON" && u != "OFF") return error("arg");
+        c.cmd = Cmd::FreqWatch;
+        c.watch = u == "ON";
+    } else if (word == "CIVTX") {
+        // Raw CI-V for clients that drive the radio themselves (BLE only).
+        if (active != Mode::Ble) return error("mode");
+        uint8_t b[civ::Frame::MAX_BYTES];
+        size_t n = civ::fromHex(arg, b, sizeof b);
+        if (n == 0 || !civ::addressFrame(b, n, 0)) return error("arg");
+        c.cmd = Cmd::CivTx;
+        c.frame.assign(b, b + n);
+    } else if (word == "CIVRX") {
+        if (active != Mode::Ble) return error("mode");
+        std::string u = upper(arg);
+        if (u != "ON" && u != "OFF") return error("arg");
+        c.cmd = Cmd::CivRx;
+        c.watch = u == "ON";
+    } else if (word == "CIV") {
+        // Reading is harmless, changing is BLE-only like the other settings.
+        if (!arg.empty() && active != Mode::Ble) return error("mode");
+        return parseCiv(arg);
     } else {
         return error("cmd");
     }

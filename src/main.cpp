@@ -10,6 +10,7 @@
 #include "core/commands.h"
 #include "core/key_output.h"
 #include "core/keyer_task.h"
+#include "radio/radio.h"
 #include "ui/mode_select.h"
 #include "settings.h"
 #include "transport/transport.h"
@@ -18,7 +19,12 @@
 
 namespace {
 
+// Turning the VFO knob broadcasts a frequency every few ms.
+constexpr uint32_t FREQ_NOTIFY_GAP_MS = 200;
+
 transport::Transport* active = nullptr;
+uint32_t freqSeq = 0;
+uint32_t freqSentAt = 0;
 
 void notifyClient(const char* line) {
     if (active) active->notify(line);
@@ -31,6 +37,26 @@ transport::Transport& transportFor(proto::Mode m) {
         case proto::Mode::Ble: break;
     }
     return transport::ble();
+}
+
+// Passes frequency and mode changes from the radio to the display and, after
+// FREQ ON, to the client: at most one per FREQ_NOTIFY_GAP_MS, the latest one
+// always goes out.
+void reportFrequency() {
+    civ::State st = radio::snapshot().state;
+    bool request = commands::takeFreqRequest();
+    if (!request && (st.seq == freqSeq || uint32_t(millis() - freqSentAt) < FREQ_NOTIFY_GAP_MS)) return;
+    freqSeq = st.seq;
+    freqSentAt = millis();
+    if (commands::freqWatch()) notifyClient(civ::formatFreq(st.valid, st.hz, st.mode).c_str());
+    ui::setRadio(civ::formatDisplay(st.valid, st.hz, st.mode));
+}
+
+// CIVRX ON: every frame from the radio to the client, as it came.
+void forwardCiv() {
+    uint8_t b[civ::Frame::MAX_BYTES];
+    size_t n;
+    while (radio::takeTapped(b, n)) notifyClient(("CIVRX " + civ::toHex(b, n)).c_str());
 }
 
 }  // namespace
@@ -60,6 +86,7 @@ void setup() {
 
     battery::begin();
     keyer_task::begin(settings::wpm());
+    radio::begin(settings::civConfig());
 
     active = &transportFor(mode);
     keyer_task::setNotifier(notifyClient);
@@ -70,6 +97,8 @@ void setup() {
 void loop() {
     battery::loop();
     active->loop();
+    reportFrequency();
+    forwardCiv();
     ui::loop();
     commands::restartIfRequested();
     delay(20);

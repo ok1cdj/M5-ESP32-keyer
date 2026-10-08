@@ -25,4 +25,7 @@ void setWifi(const std::string& ssid, const std::string& password);
 std::string apiKey();
 void setApiKey(const std::string& key);
 
+civ::Config civConfig();
+void setCivConfig(const civ::Config& cfg);
+
 }  // namespace settings

@@ -1,6 +1,6 @@
 # M5-ESP32-keyer v2
 
-CW keyer for the **M5Stack Atom** family by OK1CDJ. Send it text, and it keys the radio on its own through an optocoupler or a MOSFET. The text comes from one of three modes: **BLE**, **HTTP** or **cwdaemon**.
+CW keyer for the **M5Stack Atom** family by OK1CDJ. Send it text, and it keys the radio on its own through an optocoupler or a MOSFET. The text comes from one of three modes: **BLE**, **HTTP** or **cwdaemon**. With an Icom radio it also reads the frequency and mode over **CI-V**.
 
 **Install and configure from the browser:** https://keyer.ok1cdj.com
 
@@ -18,7 +18,7 @@ Protocol for clients (kQSO, nRF Connect, scripts): [PROTOCOL.md](PROTOCOL.md)
 | M5 **AtomS3** | ESP32-S3 | G2 (Grove) | G6 dot, G7 dash | G8 | 128×128 |
 
 - **Same wiring on every board.** The functions sit on the same positions on all boards:
-  - **Grove** (to the radio): `GND · 5V · CIV · KEY`. KEY is the SDA pin (Atom Lite G26, AtomS3 G2). The SCL pin (G32 / G1) is reserved for a planned CI-V interface.
+  - **Grove** (to the radio): `GND · 5V · CIV · KEY`. KEY is the SDA pin (Atom Lite G26, AtomS3 G2), CIV the SCL pin (Atom Lite G32, AtomS3 G1).
   - **Side header** (paddles, battery): `DOT · DASH · BAT` (Atom Lite `G19 G23 G33`, AtomS3 `G6 G7 G8`).
 - **Safe pins only.** None of them is a strapping pin, so a keyed radio or a pressed paddle can't change the boot mode. None is input-only, so the paddles get internal pull-ups.
 - **Battery.** All boards fit the **Atomic Battery Base** (200 mAh), which reads the battery voltage through a 1:2 divider on the BAT pin.
@@ -55,6 +55,27 @@ KEY pin ──[ 100 Ω ]──┬──► gate                 drain  ──►
 - Mind the polarity: the drain goes to the tip. Swapped, the body diode keys the radio permanently.
 
 Both variants have been tested on a modern transceiver whose key input has a few volts and milliamps. For an old radio with a high voltage on the key line (tube rigs, negative grid-block keying) use neither variant directly; add a relay or a suitable high-voltage keying circuit.
+
+**CI-V (Icom, frequency and mode).** One more 3.5 mm jack to the radio's REMOTE (CI-V) socket: tip = CI-V, sleeve = GND. The bus is one open-collector wire pulled up to 5 V inside the radio, so a BSS138 shifts it to 3.3 V in both directions. Everything comes from the Grove cable, which has 5 V but no 3.3 V. It needs the shared ground of variant B.
+
+```
+Grove 5V ──[ 10 kΩ ]──┬──[ 15 kΩ ]── GND
+                      │
+                    gate (about 3 V)
+                      │
+CIV pin ──────── source  BSS138  drain ──► REMOTE tip    (CI-V)
+                                           REMOTE sleeve (GND) ── Grove GND
+```
+
+- **Gate at about 3 V from a divider.** The gate takes no current, so two resistors replace a 3.3 V supply. 10 k / 15 k gives 3.0 V; anything from 2.7 to 3.3 V works.
+- **No pull-up resistor on the keyer side.** The firmware turns on the ESP32's internal pull-up on the CIV pin, which is plenty at 19200 Bd. An external pull-up to 3.3 V would work too, but the Grove has no 3.3 V and the divider is too weak to feed one.
+- When the radio pulls the line low, the BSS138's body diode and then the channel pull the CIV pin low. When the keyer pulls the pin low, the channel conducts and pulls the radio's line low. Idle, the CIV pin sits at 3.3 V and the radio's line at 5 V. The ESP32 never sees 5 V.
+- With the keyer switched off the divider has no voltage, the BSS138 stays off and the radio's bus is left alone.
+- **A plain diode does not work here:** it passes a low level in one direction only, so the keyer could either send or receive, not both.
+- Before connecting, measure the open-circuit voltage between the REMOTE tip and the sleeve: about 5 V is expected. If the radio's pull-up turns out to be missing (0 V), add 10 kΩ from the tip to the Grove 5V.
+- In the radio: **CI-V Transceive ON** (the keyer then hears every change at once) and any rate from 1200 to 19200 Bd. The keyer finds the rate and the address by itself. With Transceive off it polls once a second; that works for the default addresses (IC-706 family, IC-910, IC-7300), otherwise set them with `CIV <baud> <addr>` over BLE.
+- The frequency appears on the AtomS3 display, as `FREQ <Hz> <mode>` messages over BLE after `FREQ ON`, on the HTTP page and through the `FREQ` command ([PROTOCOL.md](PROTOCOL.md)).
+- Another controller on the same bus (a logging program through a CI-V interface) is fine; the keyer only asks when the radio is silent.
 
 **Paddles (next phase).** A separate 3.5 mm jack: tip = dot, ring = dash, sleeve = GND. The contacts switch to GND and are idle high. The firmware doesn't read them yet, but plan the second jack in your enclosure.
 
@@ -151,7 +172,7 @@ pio run -e atoms3-lite -t upload
 ```
 
 - The only differences between boards are the build flags in `platformio.ini` (pins, board) and the status module: `ui_led.cpp` or `ui_display.cpp`.
-- The keyer core (`lib/keyer_core`) and the protocol parser (`lib/protocol`) are plain C++ without Arduino, so they are tested on the PC.
+- The keyer core (`lib/keyer_core`), the protocol parser (`lib/protocol`) and the CI-V parser with its link logic (`lib/civ`) are plain C++ without Arduino, so they are tested on the PC.
 
 ### Hardware checklist
 
@@ -172,6 +193,10 @@ Tested so far on AtomS3 Lite, AtomS3 and Atom Lite. Real keying of a radio throu
 - [x] Battery reading on the Atom Lite: reads 4222–4228 mV at the 4.20 V end of charge, within the charger's ±1 %, so it needs no correction.
 - [x] cwdaemon over UDP 6789: text, `ESC 2` (speed) and `ESC 4` (abort). Timing matches PARIS.
 - [x] cwdaemon from Tucnak.
+- [ ] CI-V: open-circuit voltage on the REMOTE tip measured before connecting.
+- [ ] CI-V on the IC-706: rate and address found with Transceive on and off, at 9600 and 19200 Bd.
+- [ ] CI-V: the frequency follows the VFO knob on the display and over BLE (`FREQ ON`), `FREQ NONE` after the cable is pulled.
+- [ ] CI-V: keying at 20 WPM unchanged while the VFO knob is turned; `STOP` still opens at once.
 
 ## License
 
