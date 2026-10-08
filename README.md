@@ -50,7 +50,7 @@ KEY pin ──[ 100 Ω ]──┬──► gate                 drain  ──►
                     GND (source)
 ```
 
-- A logic-level N-MOSFET: **AO3400** (fully on at 3.3 V) or **BSS138**. 100 Ω in the gate, 10 kΩ gate to source.
+- A logic-level N-MOSFET: **AO3400** (fully on at 3.3 V) or **BSS138**. A through-hole **2N7000** also keyed the radio reliably in a test, although its threshold of up to 3 V leaves little margin at 3.3 V. 100 Ω in the gate, 10 kΩ gate to source.
 - The 10 kΩ gate-source resistor is also the pull-down: the MOSFET stays off while the pin is floating during a reset.
 - Mind the polarity: the drain goes to the tip. Swapped, the body diode keys the radio permanently.
 
