@@ -200,6 +200,7 @@ Tested so far on AtomS3 Lite, AtomS3 and Atom Lite. Real keying of a radio throu
 - [x] CI-V tunnel: `CIVTX` retunes the radio, five frequency sets in a row all acknowledged.
 - [x] CI-V: the frequency follows the VFO knob on the AtomS3 display and over BLE (`FREQ ON`); about 10 s after the cable is pulled the display line goes away and `FREQ NONE` arrives, and the rig is found again when it is plugged back.
 - [x] Keying at 20 WPM with CI-V running on the IC-706MkII (2N7000 on KEY): PARIS ×3 took 8.78 s (8.58 s plus BLE latency) and keyed the radio cleanly; `STOP` mid-message answered `STOPPED` within 63 ms and the radio stopped at once.
+- [x] Display rotation on the AtomS3: set from the HTTP page, applied at once and kept after a restart.
 
 ## License
 
