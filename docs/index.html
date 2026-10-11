@@ -124,6 +124,7 @@
   .btn.danger{border-color:var(--danger);color:var(--danger);}
   .dev-status{font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text-muted);}
   .dev-status strong{color:var(--cyan);font-weight:600;}
+  .freq{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;margin:0 0 4px;}
   .config fieldset{border:1px solid var(--hairline);border-radius:8px;padding:16px;margin:0 0 14px;}
   .config fieldset:disabled{opacity:.55;}
   .config legend{font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);padding:0 6px;}
@@ -244,6 +245,32 @@
         <button class="btn" id="save-mode" style="align-self:flex-end;">Save mode &amp; restart</button>
       </div>
       <p class="hint" style="margin:0;">To get back to BLE mode later, hold the button while powering on, and release it when the LED is blue.</p>
+    </fieldset>
+
+    <fieldset id="ble-radio" disabled hidden>
+      <legend>Radio (Icom CI-V)</legend>
+      <p class="freq" id="freq">&mdash;</p>
+      <p class="hint" style="margin:0 0 12px;" id="civ-link"></p>
+      <div class="row">
+        <label style="flex:0 1 200px;">CI-V
+          <select id="civ-mode">
+            <option value="AUTO">Auto (find rate and address)</option>
+            <option value="FIXED">Fixed rate and address</option>
+            <option value="OFF">Off</option>
+          </select>
+        </label>
+        <label style="flex:0 1 120px;" class="civ-fixed">Rate
+          <select id="civ-baud">
+            <option>19200</option>
+            <option>9600</option>
+            <option>4800</option>
+            <option>1200</option>
+          </select>
+        </label>
+        <label style="flex:0 1 120px;" class="civ-fixed">Address (hex)<input id="civ-addr" maxlength="2" spellcheck="false" placeholder="94"></label>
+        <button class="btn" id="save-civ" style="align-self:flex-end;">Save CI-V</button>
+      </div>
+      <p class="hint" style="margin:0;">Auto finds the radio by itself; turn the VFO knob once if its address was changed. Use Fixed only for a radio with a changed address and CI-V Transceive off.</p>
     </fieldset>
 
     <fieldset id="ble-display" disabled hidden>
@@ -367,10 +394,12 @@
     var NUS = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
     var NUS_RX = '6e400002-b5a3-f393-e0a9-e50e24dcca9e';
     var NUS_TX = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+    var FREQ = /^FREQ (\d+ \S+|NONE)$/;
     var ASYNC = /^(DONE|STOPPED|WPM \d+|ERR (char|full|watchdog))$/;
     var $ = function(id){ return document.getElementById(id); };
 
     var device = null, rx = null, rxBuf = '', waiting = [], busy = Promise.resolve();
+    var haveRig = false;
 
     function log(text, cls){
       var el = $('ble-log'), line = document.createElement('div');
@@ -383,10 +412,34 @@
     function setConnected(on, name){
       $('ble-connect').disabled = on;
       $('ble-disconnect').disabled = !on;
-      ['ble-controls','ble-mode','ble-display','ble-test'].forEach(function(id){ $(id).disabled = !on; });
+      ['ble-controls','ble-mode','ble-radio','ble-display','ble-test'].forEach(function(id){ $(id).disabled = !on; });
       $('ble-status').innerHTML = on ? 'connected to <strong></strong>' : 'not connected';
       if(on) $('ble-status').querySelector('strong').textContent = name;
-      else $('ble-display').hidden = true;
+      else { $('ble-display').hidden = true; $('ble-radio').hidden = true; $('freq').innerHTML = '&mdash;'; haveRig = false; }
+    }
+
+    // FREQ <Hz> <mode> / FREQ NONE, sent by the keyer after FREQ ON.
+    function showFreq(line){
+      var m = line.match(/^FREQ (\d+) (\S+)/);
+      $('freq').textContent = m ? (m[1] / 1e6).toFixed(5) + ' MHz  ' + m[2] : 'no radio';
+      // Rig found or lost: the link line changes too.
+      if(!!m !== haveRig){ haveRig = !!m; refreshCiv().catch(function(){}); }
+    }
+
+    function showCivFixed(){
+      var fixed = $('civ-mode').value === 'FIXED';
+      document.querySelectorAll('.civ-fixed').forEach(function(el){ el.hidden = !fixed; });
+    }
+
+    // CIV AUTO 19200 4D / CIV AUTO - - / CIV FIXED 9600 94 / CIV OFF
+    async function refreshCiv(){
+      var resp = await command('CIV');
+      var m = resp.match(/^CIV (AUTO|FIXED|OFF)(?: (\S+) (\S+))?$/);
+      if(!m) return false;
+      $('civ-link').textContent = m[1] === 'OFF' ? 'CI-V is off'
+        : m[2] === '-' ? 'looking for the radio…'
+        : 'radio ' + m[3] + 'h at ' + m[2] + ' Bd' + (m[1] === 'FIXED' ? ' (fixed)' : '');
+      return m;
     }
 
     function onNotify(ev){
@@ -395,7 +448,9 @@
       while((nl = rxBuf.indexOf('\n')) >= 0){
         var line = rxBuf.slice(0, nl).replace(/\r$/, '');
         rxBuf = rxBuf.slice(nl + 1);
-        if(ASYNC.test(line) || !waiting.length){
+        if(FREQ.test(line)){
+          showFreq(line);
+        } else if(ASYNC.test(line) || !waiting.length){
           log('  ' + line, /^ERR/.test(line) ? 'err' : 'rx');
         } else {
           waiting.shift()(line);
@@ -455,6 +510,14 @@
       var st = await command('STATUS');
       var m = st.match(/WPM (\d+)/); if(m) $('wpm').value = m[1];
       // Firmware 2.1.0+ on a board with a display; older firmware answers ERR cmd.
+      var civ = await refreshCiv();
+      if(civ){
+        $('civ-mode').value = civ[1];
+        if(civ[1] === 'FIXED'){ $('civ-baud').value = civ[2]; $('civ-addr').value = civ[3]; }
+        showCivFixed();
+        $('ble-radio').hidden = false;
+        await command('FREQ ON');
+      }
       var rot = (await command('ROTATE')).match(/^ROTATE (\d+)/);
       if(rot){ $('rotation').value = rot[1]; $('ble-display').hidden = false; }
       try {
@@ -492,6 +555,17 @@
       var mode = $('mode').value;
       var resp = await command('MODE ' + mode);
       if(resp === 'OK') log('keyer restarts in ' + mode + ' mode' + (mode === 'BLE' ? '' : ', look for keyer-XXXX.local on your network'));
+    }));
+
+    $('civ-mode').addEventListener('change', showCivFixed);
+    $('save-civ').addEventListener('click', guard(async function(){
+      var mode = $('civ-mode').value, line = 'CIV ' + mode;
+      if(mode === 'FIXED'){
+        var addr = $('civ-addr').value.trim().toUpperCase();
+        if(!/^[0-9A-F]{1,2}$/.test(addr)){ log('! address must be hex, for example 94', 'err'); return; }
+        line = 'CIV ' + $('civ-baud').value + ' ' + addr;
+      }
+      if(await command(line) === 'OK') await refreshCiv();
     }));
 
     $('save-rotation').addEventListener('click', guard(function(){ return command('ROTATE ' + $('rotation').value); }));

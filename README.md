@@ -94,7 +94,7 @@ Exactly one transport runs at a time.
 
 **Wi-Fi setup** for HTTP and CWD happens over BLE. There is no access point and no captive portal.
 
-The easiest way is the *Configure over Bluetooth* section of https://keyer.ok1cdj.com: connect, fill in SSID, password and optionally an API key, then choose the mode.
+The easiest way is the *Configure over Bluetooth* section of https://keyer.ok1cdj.com: connect, fill in SSID, password and optionally an API key, then choose the mode. The same section shows the radio's frequency, sets up CI-V and rotates the AtomS3 display.
 
 Manually, for example from nRF Connect (on iPhone and iPad this is the only way, because they have no Web Bluetooth):
 
