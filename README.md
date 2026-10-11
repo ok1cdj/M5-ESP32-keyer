@@ -74,7 +74,7 @@ CIV pin ──────── source  BSS138 / 2N7000  drain ──► REMOTE
 - With the keyer switched off the divider has no voltage, the BSS138 stays off and the radio's bus is left alone.
 - **A plain diode does not work here:** it passes a low level in one direction only, so the keyer could either send or receive, not both.
 - Before connecting, measure the open-circuit voltage between the REMOTE tip and the sleeve: about 5 V is expected. If the radio's pull-up turns out to be missing (0 V), add 10 kΩ from the tip to the Grove 5V.
-- In the radio: **CI-V Transceive ON** (the keyer then hears every change at once) and any rate from 1200 to 19200 Bd. The keyer finds the rate and the address by itself. With Transceive off it polls once a second; that works for the default addresses (IC-706 family, IC-910, IC-7300), otherwise set them with `CIV <baud> <addr>` over BLE.
+- In the radio: **CI-V Transceive ON** (the keyer then hears every change at once) and any rate from 1200 to 19200 Bd, or Auto. The keyer finds the rate and the address by itself and remembers the rig. A rig with a changed address (an IC-706MkII here was at 4D) is found the first time when you turn the VFO knob. With Transceive off it polls once a second; that works for the default addresses (IC-706 family, IC-910, IC-7300) and the remembered rig, otherwise set them with `CIV <baud> <addr>` over BLE.
 - The frequency appears on the AtomS3 display, as `FREQ <Hz> <mode>` messages over BLE after `FREQ ON`, on the HTTP page and through the `FREQ` command ([PROTOCOL.md](PROTOCOL.md)).
 - Another controller on the same bus (a logging program through a CI-V interface) is fine; the keyer only asks when the radio is silent.
 
@@ -194,8 +194,9 @@ Tested so far on AtomS3 Lite, AtomS3 and Atom Lite. Real keying of a radio throu
 - [x] Battery reading on the Atom Lite: reads 4222–4228 mV at the 4.20 V end of charge, within the charger's ±1 %, so it needs no correction.
 - [x] cwdaemon over UDP 6789: text, `ESC 2` (speed) and `ESC 4` (abort). Timing matches PARIS.
 - [x] cwdaemon from Tucnak.
-- [ ] CI-V: open-circuit voltage on the REMOTE tip measured before connecting.
-- [ ] CI-V on the IC-706: rate and address found with Transceive on and off, at 9600 and 19200 Bd.
+- [x] CI-V: open-circuit voltage on the REMOTE tip measured before connecting (IC-706MkII: 3.7 V).
+- [x] CI-V on the IC-706MkII (address 4D, direct through 1 kΩ): rate and address found, also with the radio's rate on Auto; the remembered rig is found after a restart without Transceive.
+- [x] CI-V tunnel: `CIVTX` retunes the radio, five frequency sets in a row all acknowledged.
 - [ ] CI-V: the frequency follows the VFO knob on the display and over BLE (`FREQ ON`), `FREQ NONE` after the cable is pulled.
 - [ ] CI-V: keying at 20 WPM unchanged while the VFO knob is turned; `STOP` still opens at once.
 
