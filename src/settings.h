@@ -27,5 +27,8 @@ void setApiKey(const std::string& key);
 
 civ::Config civConfig();
 void setCivConfig(const civ::Config& cfg);
+// The rig the automatic detection found last; rig 0 = none yet.
+void civLast(uint8_t& rig, uint32_t& baud);
+void setCivLast(uint8_t rig, uint32_t baud);
 
 }  // namespace settings

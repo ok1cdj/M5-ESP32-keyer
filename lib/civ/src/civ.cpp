@@ -13,7 +13,6 @@ constexpr size_t BAUD_COUNT = sizeof(BAUDS) / sizeof(BAUDS[0]);
 // Default addresses probed when the rig has Transceive off:
 // IC-706MkIIG, IC-706MkII, IC-706, IC-910H, IC-7300.
 constexpr uint8_t PROBE_ADDRS[] = {0x58, 0x4E, 0x48, 0x60, 0x94};
-constexpr size_t PROBE_COUNT = sizeof(PROBE_ADDRS) / sizeof(PROBE_ADDRS[0]);
 
 }  // namespace
 
@@ -187,9 +186,30 @@ std::string formatLink(const Config& cfg, const State& st) {
 
 // ---- Link ------------------------------------------------------------------
 
+void Link::setHint(uint8_t rig, uint32_t baud) {
+    hintRig_ = rig;
+    hintBaud_ = baud;
+}
+
+uint8_t Link::probeAddr(size_t i) const {
+    if (hintRig_ != 0) {
+        if (i == 0) return hintRig_;
+        i--;
+    }
+    for (uint8_t a : PROBE_ADDRS) {
+        if (a == hintRig_) continue;
+        if (i-- == 0) return a;
+    }
+    return 0;
+}
+
 void Link::configure(const Config& cfg, uint32_t now) {
     cfg_ = cfg;
+    // Search from the rate the rig was last found at.
     baudIndex_ = 0;
+    for (size_t i = 0; i < BAUD_COUNT; i++) {
+        if (BAUDS[i] == hintBaud_) baudIndex_ = uint8_t(i);
+    }
     unlock(now);
     if (cfg_.mode == LinkMode::Fixed) {
         state_.baud = cfg_.baud;
@@ -202,7 +222,7 @@ void Link::configure(const Config& cfg, uint32_t now) {
 void Link::unlock(uint32_t now) {
     state_.locked = false;
     state_.rig = 0;
-    setFreq(false, 0, MODE_UNKNOWN);
+    update(false, 0, MODE_UNKNOWN);
     state_.baud = BAUDS[baudIndex_];
     searchStart_ = now;
     probeIndex_ = 0;
@@ -221,11 +241,19 @@ void Link::lock(uint8_t rig, uint32_t now) {
     pendingLen_ = 2;
 }
 
-void Link::setFreq(bool valid, uint64_t hz, uint8_t mode) {
-    if (valid == state_.valid && hz == state_.hz && mode == state_.mode) return;
+// The frequency is reported once the mode is known too, so a client never
+// sees "?" for a mode that is just about to arrive.
+void Link::update(bool hzKnown, uint64_t hz, uint8_t mode) {
+    hzKnown_ = hzKnown;
+    hz_ = hz;
+    mode_ = mode;
+    bool valid = hzKnown && mode != MODE_UNKNOWN;
+    uint64_t shownHz = valid ? hz : 0;
+    uint8_t shownMode = valid ? mode : MODE_UNKNOWN;
+    if (valid == state_.valid && shownHz == state_.hz && shownMode == state_.mode) return;
     state_.valid = valid;
-    state_.hz = hz;
-    state_.mode = mode;
+    state_.hz = shownHz;
+    state_.mode = shownMode;
     state_.seq++;
 }
 
@@ -248,12 +276,9 @@ void Link::onFrame(const Frame& f, uint32_t now) {
     }
     uint64_t hz;
     if ((f.cmd == CMD_TRX_FREQ || f.cmd == CMD_READ_FREQ) && decodeFreq(f.data, f.len, hz)) {
-        setFreq(true, hz, state_.mode);
-    } else if ((f.cmd == CMD_TRX_MODE || f.cmd == CMD_READ_MODE) && f.len >= 1 &&
-               f.data[0] != state_.mode) {
-        // A mode known before the frequency stays hidden until it arrives.
-        state_.mode = f.data[0];
-        if (state_.valid) state_.seq++;
+        update(true, hz, mode_);
+    } else if ((f.cmd == CMD_TRX_MODE || f.cmd == CMD_READ_MODE) && f.len >= 1) {
+        update(hzKnown_, hz_, f.data[0]);
     }
 }
 
@@ -268,10 +293,11 @@ Link::Action Link::poll(uint32_t now) {
         }
         a.baud = state_.baud;
         // Probe the known addresses in case Transceive is off.
-        if (probeIndex_ < PROBE_COUNT &&
-            due(searchStart_, PROBE_GAP_MS * (probeIndex_ + 1), now)) {
+        uint8_t rig = probeAddr(probeIndex_);
+        if (rig != 0 && due(searchStart_, PROBE_GAP_MS * (probeIndex_ + 1), now)) {
+            probeIndex_++;
             a.send = true;
-            a.rig = PROBE_ADDRS[probeIndex_++];
+            a.rig = rig;
             a.cmd = CMD_READ_FREQ;
             lastSend_ = now;
         }
@@ -286,13 +312,13 @@ Link::Action Link::poll(uint32_t now) {
             return a;
         }
         // Fixed: keep asking, but report the rig as gone.
-        setFreq(false, 0, MODE_UNKNOWN);
+        update(false, 0, MODE_UNKNOWN);
         lastRx_ = now;
     }
     // Poll when the rig does not report changes by itself, and until both
     // the frequency and the mode are known.
     bool quiet = !heardBroadcast_ || due(lastBroadcast_, QUIET_MS, now);
-    bool incomplete = !state_.valid || state_.mode == MODE_UNKNOWN;
+    bool incomplete = !state_.valid;
     if (pendingLen_ == 0 && (quiet || incomplete) && due(lastPoll_, POLL_MS, now)) {
         pending_[0] = CMD_READ_FREQ;
         pending_[1] = CMD_READ_MODE;

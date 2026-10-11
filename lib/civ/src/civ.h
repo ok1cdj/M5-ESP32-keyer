@@ -82,7 +82,7 @@ bool validBaud(uint32_t baud);
 
 struct State {
     bool locked = false;   // rig address and rate known
-    bool valid = false;    // frequency known
+    bool valid = false;    // frequency and mode known
     uint64_t hz = 0;
     uint8_t mode = MODE_UNKNOWN;
     uint32_t baud = 0;
@@ -113,6 +113,10 @@ public:
         bool send = false;
     };
 
+    // The rig found last time (stored by the driver): searched first, so a
+    // rig with a changed address and Transceive quiet is found after a restart.
+    // Takes effect at the next configure().
+    void setHint(uint8_t rig, uint32_t baud);
     void configure(const Config& cfg, uint32_t now);
     void onFrame(const Frame& f, uint32_t now);
     Action poll(uint32_t now);
@@ -123,13 +127,19 @@ public:
 private:
     void lock(uint8_t rig, uint32_t now);
     void unlock(uint32_t now);
-    void setFreq(bool valid, uint64_t hz, uint8_t mode);
+    void update(bool hzKnown, uint64_t hz, uint8_t mode);
+    uint8_t probeAddr(size_t i) const;  // 0 past the end
     bool due(uint32_t since, uint32_t gap, uint32_t now) const {
         return uint32_t(now - since) >= gap;
     }
 
     Config cfg_;
     State state_;
+    bool hzKnown_ = false;
+    uint64_t hz_ = 0;
+    uint8_t mode_ = MODE_UNKNOWN;
+    uint8_t hintRig_ = 0;
+    uint32_t hintBaud_ = 0;
     uint8_t baudIndex_ = 0;
     uint32_t searchStart_ = 0;
     uint8_t probeIndex_ = 0;

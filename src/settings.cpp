@@ -69,4 +69,14 @@ void setCivConfig(const civ::Config& cfg) {
     }
 }
 
+void civLast(uint8_t& rig, uint32_t& baud) {
+    rig = prefs.getUChar("civlrig", 0);
+    baud = prefs.getUInt("civlbaud", 0);
+}
+
+void setCivLast(uint8_t rig, uint32_t baud) {
+    if (prefs.getUChar("civlrig", 0) != rig) prefs.putUChar("civlrig", rig);
+    if (prefs.getUInt("civlbaud", 0) != baud) prefs.putUInt("civlbaud", baud);
+}
+
 }  // namespace settings

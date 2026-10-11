@@ -3,9 +3,12 @@
 #include <Arduino.h>
 #include <driver/gpio.h>
 #include <driver/uart.h>
+#include <hal/gpio_ll.h>
 #include <freertos/queue.h>
 
 #include <atomic>
+
+#include "settings.h"
 
 namespace radio {
 
@@ -19,11 +22,18 @@ constexpr uint32_t TICK_MS = 5;
 // 4800 Bd); waiting for it avoids most collisions.
 constexpr uint32_t IDLE_MS = 5;
 constexpr uint32_t IDLE_WAIT_MS = 50;
+// After a frame of ours, the next one waits for the rig's answer (or this
+// long): the IC-706 drops a command that arrives before it has answered the
+// previous one.
+constexpr uint32_t REPLY_WAIT_MS = 100;
 
 civ::Link link;
 civ::FrameParser parser;
 uint32_t baud = 0;  // 0 = UART not installed
 uint32_t lastByte = 0;
+bool awaitingReply = false;
+civ::Link::Action own;  // our next query, sent when the bus is free
+uint32_t sentAt = 0;
 
 struct RawFrame {
     uint8_t n;
@@ -43,7 +53,8 @@ bool cfgPending = false;
 
 void uartOff() {
     uart_driver_delete(PORT);
-    gpio_reset_pin(PIN);  // input, nothing driven onto the bus
+    gpio_reset_pin(PIN);  // GPIO function, output off, pull-up on
+    gpio_input_enable(PIN);
     baud = 0;
 }
 
@@ -62,8 +73,9 @@ void uartOn(uint32_t rate) {
         // One wire: the TX signal may only pull the line low, the internal
         // pull-up brings it back (the Grove has no 3.3 V for an external one,
         // README). RX keeps reading the same pin, so everything we send comes
-        // back as an echo.
-        gpio_set_direction(PIN, GPIO_MODE_INPUT_OUTPUT_OD);
+        // back as an echo. Only the pad driver changes here: gpio_set_direction()
+        // would reconnect the pin to the plain GPIO output (low) and hold the bus.
+        gpio_ll_od_enable(GPIO_LL_GET_HW(GPIO_PORT_0), PIN);
         gpio_pullup_en(PIN);
     } else {
         uart_set_baudrate(PORT, rate);
@@ -73,13 +85,39 @@ void uartOn(uint32_t rate) {
     baud = rate;
 }
 
+#ifdef CIV_DEBUG
+// Bench diagnostics: once a second the rate, bytes heard, frames parsed, the
+// pin level and the first bytes. Build with -DCIV_DEBUG.
+uint32_t dbgBytes = 0, dbgFrames = 0, dbgAt = 0;
+uint8_t dbgFirst[12];
+size_t dbgFirstLen = 0;
+
+void debugLog(uint32_t now) {
+    if (uint32_t(now - dbgAt) < 1000) return;
+    dbgAt = now;
+    std::string hex = civ::toHex(dbgFirst, dbgFirstLen);
+    Serial.printf("[civ] %u Bd, %u bytes, %u frames, pin %d, %s\n", unsigned(baud),
+                  unsigned(dbgBytes), unsigned(dbgFrames), gpio_get_level(PIN), hex.c_str());
+    dbgBytes = dbgFrames = 0;
+    dbgFirstLen = 0;
+}
+#endif
+
 void receive(uint32_t now) {
     uint8_t buf[64];
     int n;
     while ((n = uart_read_bytes(PORT, buf, sizeof buf, 0)) > 0) {
         lastByte = now;
+#ifdef CIV_DEBUG
+        dbgBytes += n;
+        for (int i = 0; i < n && dbgFirstLen < sizeof dbgFirst; i++) dbgFirst[dbgFirstLen++] = buf[i];
+#endif
         for (int i = 0; i < n; i++) {
             if (!parser.feed(buf[i])) continue;
+            if (parser.frame().from != civ::CONTROLLER) awaitingReply = false;
+#ifdef CIV_DEBUG
+            dbgFrames++;
+#endif
             const civ::Frame& f = parser.frame();
             link.onFrame(f, now);
             const civ::State& st = link.state();
@@ -101,7 +139,13 @@ bool sendBytes(const uint8_t* b, size_t n) {
         receive(millis());
     }
     uart_write_bytes(PORT, b, n);
+    awaitingReply = true;
+    sentAt = millis();
     return true;
+}
+
+bool canSend() {
+    return baud != 0 && (!awaitingReply || uint32_t(millis() - sentAt) >= REPLY_WAIT_MS);
 }
 
 void send(uint8_t rig, uint8_t cmd) {
@@ -113,6 +157,11 @@ void send(uint8_t rig, uint8_t cmd) {
 void log(const civ::State& before, const civ::State& now) {
     if (now.locked && (!before.locked || now.rig != before.rig || now.baud != before.baud)) {
         Serial.printf("[civ] rig %02X at %u Bd\n", now.rig, unsigned(now.baud));
+        if (link.config().mode == civ::LinkMode::Auto) {
+            // Asked first after the next start (Link::setHint).
+            link.setHint(now.rig, now.baud);
+            settings::setCivLast(now.rig, now.baud);
+        }
     } else if (!now.locked && before.locked) {
         Serial.println("[civ] rig lost, searching");
     }
@@ -134,14 +183,24 @@ void task(void*) {
         if (a.baud != baud) {
             if (a.baud == 0) uartOff();
             else uartOn(a.baud);
+            own.send = false;
+            awaitingReply = false;
         }
-        if (a.send && baud != 0) send(a.rig, a.cmd);
+        // One frame on the bus at a time; a client's frame goes before our
+        // own query, which the Link simply repeats later.
+        if (a.send) own = a;  // waits here while the bus is busy
         RawFrame r;
-        while (xQueueReceive(txQueue, &r, 0) == pdTRUE) {
-            // Rate changed or rig lost since it was queued: the client times out.
-            if (baud != 0 && link.state().locked) sendBytes(r.b, r.n);
+        if (canSend() && xQueueReceive(txQueue, &r, 0) == pdTRUE) {
+            // Rig lost since it was queued: dropped, the client times out.
+            if (link.state().locked) sendBytes(r.b, r.n);
+        } else if (own.send && canSend()) {
+            send(own.rig, own.cmd);
+            own.send = false;
         }
         log(before, link.state());
+#ifdef CIV_DEBUG
+        debugLog(now);
+#endif
 
         portENTER_CRITICAL(&lock);
         shared.cfg = link.config();
@@ -156,6 +215,10 @@ void task(void*) {
 void begin(const civ::Config& cfg) {
     txQueue = xQueueCreate(TX_QUEUE, sizeof(RawFrame));
     tapQueue = xQueueCreate(TAP_QUEUE, sizeof(RawFrame));
+    uint8_t rig;
+    uint32_t rate;
+    settings::civLast(rig, rate);
+    link.setHint(rig, rate);
     configure(cfg);
     // Below the keyer task (20, core 0), so the keying timing is not affected.
     xTaskCreatePinnedToCore(task, "civ", 3072, nullptr, 5, nullptr, 1);

@@ -160,8 +160,8 @@ void test_link_locks_on_broadcast_and_queries() {
     l.onFrame(frame(0x00, 0x58, 0x00, F14025), 50);
     TEST_ASSERT_TRUE(l.state().locked);
     TEST_ASSERT_EQUAL_HEX8(0x58, l.state().rig);
-    TEST_ASSERT_TRUE(l.state().valid);
-    TEST_ASSERT_EQUAL_UINT32(14025000, (uint32_t)l.state().hz);
+    // Not reported before the mode is known.
+    TEST_ASSERT_FALSE(l.state().valid);
     // The current state is read at once: frequency, then mode.
     auto s = run(l, 60, 200);
     TEST_ASSERT_EQUAL(2, (int)s.size());
@@ -170,6 +170,8 @@ void test_link_locks_on_broadcast_and_queries() {
     TEST_ASSERT_EQUAL_HEX8(0x04, s[1].cmd);
     uint32_t seq = l.state().seq;
     l.onFrame(frame(0xE0, 0x58, 0x04, {0x03, 0x01}), 210);
+    TEST_ASSERT_TRUE(l.state().valid);
+    TEST_ASSERT_EQUAL_UINT32(14025000, (uint32_t)l.state().hz);
     TEST_ASSERT_EQUAL_HEX8(0x03, l.state().mode);
     TEST_ASSERT_EQUAL_UINT32(seq + 1, l.state().seq);
     // The same mode again is not a change.
@@ -184,6 +186,7 @@ void test_link_ignores_own_echo_and_other_traffic() {
     l.onFrame(frame(0x58, 0xE1, 0x03, {}), 20);   // another controller
     TEST_ASSERT_FALSE(l.state().locked);
     l.onFrame(frame(0xE0, 0x58, 0x03, F14025), 30);
+    l.onFrame(frame(0xE0, 0x58, 0x04, {0x03}), 35);
     TEST_ASSERT_TRUE(l.state().locked);
     // A frame from another device does not change the frequency.
     l.onFrame(frame(0x00, 0x60, 0x00, {0x00, 0x00, 0x30, 0x45, 0x01}), 40);
@@ -260,6 +263,7 @@ void test_link_fixed_and_off() {
     l.onFrame(frame(0x00, 0x58, 0x00, F14025), 10);
     TEST_ASSERT_FALSE(l.state().valid);
     l.onFrame(frame(0x00, 0x60, 0x00, F14025), 20);
+    l.onFrame(frame(0x00, 0x60, 0x01, {0x03}), 25);
     TEST_ASSERT_TRUE(l.state().valid);
     // Lost: reported, but the link keeps polling the same rig.
     run(l, 30, Link::LOST_MS + 100);
@@ -275,6 +279,24 @@ void test_link_fixed_and_off() {
     TEST_ASSERT_EQUAL(0, (int)run(l, 0, 5000).size());
     l.onFrame(frame(0x00, 0x58, 0x00, F14025), 10);
     TEST_ASSERT_FALSE(l.state().locked);
+}
+
+void test_link_hint_first() {
+    Link l;
+    l.setHint(0x4D, 9600);
+    l.configure(Config{}, 0);
+    TEST_ASSERT_EQUAL_UINT32(9600, l.poll(0).baud);
+    auto s = run(l, 0, Link::SEARCH_DWELL_MS - 10);
+    TEST_ASSERT_EQUAL(6, (int)s.size());
+    TEST_ASSERT_EQUAL_HEX8(0x4D, s[0].rig);
+    TEST_ASSERT_EQUAL_HEX8(0x58, s[1].rig);
+    // A hint among the defaults is not asked twice.
+    l.setHint(0x58, 19200);
+    l.configure(Config{}, 0);
+    s = run(l, 0, Link::SEARCH_DWELL_MS - 10);
+    TEST_ASSERT_EQUAL(5, (int)s.size());
+    TEST_ASSERT_EQUAL_HEX8(0x58, s[0].rig);
+    TEST_ASSERT_EQUAL_HEX8(0x4E, s[1].rig);
 }
 
 void test_link_clock_wrap() {
@@ -300,6 +322,7 @@ int main() {
     RUN_TEST(test_link_polls_without_transceive_and_loses_the_rig);
     RUN_TEST(test_link_stays_quiet_with_transceive);
     RUN_TEST(test_link_fixed_and_off);
+    RUN_TEST(test_link_hint_first);
     RUN_TEST(test_link_clock_wrap);
     return UNITY_END();
 }
