@@ -246,6 +246,21 @@
       <p class="hint" style="margin:0;">To get back to BLE mode later, hold the button while powering on, and release it when the LED is blue.</p>
     </fieldset>
 
+    <fieldset id="ble-display" disabled hidden>
+      <legend>Display (AtomS3)</legend>
+      <div class="row">
+        <label style="flex:0 1 200px;">Rotation
+          <select id="rotation">
+            <option value="0">0°</option>
+            <option value="90">90°</option>
+            <option value="180">180°</option>
+            <option value="270">270°</option>
+          </select>
+        </label>
+        <button class="btn" id="save-rotation" style="align-self:flex-end;">Rotate</button>
+      </div>
+    </fieldset>
+
     <fieldset id="ble-test" disabled>
       <legend>Test</legend>
       <div class="row">
@@ -368,9 +383,10 @@
     function setConnected(on, name){
       $('ble-connect').disabled = on;
       $('ble-disconnect').disabled = !on;
-      ['ble-controls','ble-mode','ble-test'].forEach(function(id){ $(id).disabled = !on; });
+      ['ble-controls','ble-mode','ble-display','ble-test'].forEach(function(id){ $(id).disabled = !on; });
       $('ble-status').innerHTML = on ? 'connected to <strong></strong>' : 'not connected';
       if(on) $('ble-status').querySelector('strong').textContent = name;
+      else $('ble-display').hidden = true;
     }
 
     function onNotify(ev){
@@ -438,6 +454,9 @@
       await command('VER');
       var st = await command('STATUS');
       var m = st.match(/WPM (\d+)/); if(m) $('wpm').value = m[1];
+      // Firmware 2.1.0+ on a board with a display; older firmware answers ERR cmd.
+      var rot = (await command('ROTATE')).match(/^ROTATE (\d+)/);
+      if(rot){ $('rotation').value = rot[1]; $('ble-display').hidden = false; }
       try {
         var bas = await server.getPrimaryService('battery_service');
         var lvl = await bas.getCharacteristic('battery_level');
@@ -474,6 +493,8 @@
       var resp = await command('MODE ' + mode);
       if(resp === 'OK') log('keyer restarts in ' + mode + ' mode' + (mode === 'BLE' ? '' : ', look for keyer-XXXX.local on your network'));
     }));
+
+    $('save-rotation').addEventListener('click', guard(function(){ return command('ROTATE ' + $('rotation').value); }));
 
     $('send').addEventListener('click', guard(function(){ return command('SEND ' + $('send-text').value); }));
     $('stop').addEventListener('click', guard(function(){ return command('STOP'); }));
