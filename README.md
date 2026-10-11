@@ -4,6 +4,8 @@ CW keyer for the **M5Stack Atom** family by OK1CDJ. Send it text, and it keys th
 
 **Install and configure from the browser:** https://keyer.ok1cdj.com
 
+**Build it** (parts with shop links, schematics, in English and Czech): https://keyer.ok1cdj.com/build.html
+
 - Flashing needs Chrome or Edge on a desktop (Web Serial).
 - Configuration over Bluetooth also works in Chrome on Android. On Linux, enable `chrome://flags/#enable-web-bluetooth` and restart Chrome.
 

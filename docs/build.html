@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build the CW keyer</title>
+<meta name="description" content="Build the OK1CDJ CW keyer: an M5Stack Atom, a few parts soldered into the cable, two 3.5 mm jacks. Keys the radio and reads an Icom over CI-V.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+  // Before the first paint: language (?lang=, else the browser's) and, when opened from
+  // kQSO (?app=kqso&display=eink|standard&theme=light|dark), kQSO's look.
+  (function(){
+    var q = new URLSearchParams(location.search), h = document.documentElement;
+    var l = q.get('lang') || (navigator.language || 'en').slice(0, 2);
+    h.lang = l === 'cs' || l === 'sk' ? 'cs' : 'en';
+    if (q.get('app') === 'kqso') {
+      h.dataset.app = 'kqso';
+      h.dataset.display = q.get('display') === 'eink' ? 'eink' : 'standard';
+      var t = q.get('theme');
+      h.dataset.theme = t === 'dark' || t === 'light' ? t : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    }
+  })();
+</script>
+<style>
+  /* The keyer site's look (as index.html). */
+  :root{
+    --bg:#0c1016; --panel:#131a23; --line:#232c3a; --fg:#eef2f5; --muted:#8793a1;
+    --accent:#c98a3c; --link:#5fd0c9; --warn:#d9614f;
+    --radius:10px; --border-w:1px;
+    --font:'Inter',system-ui,-apple-system,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  /* Opened from kQSO: its tokens (kQSO web/src/theme/tokens.css). */
+  html[data-app='kqso']{
+    --bg:#ffffff; --panel:#f6f6f6; --line:#cfcfcf; --fg:#1a1a1a; --muted:#6a6a6a;
+    --accent:#1a1a1a; --link:#1a1a1a; --warn:#b00020;
+    --radius:5px; --font:system-ui,sans-serif; --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  html[data-app='kqso'][data-theme='dark']{
+    --bg:#131313; --panel:#1f1f1f; --line:#3a3a3a; --fg:#e8e8e8; --muted:#9a9a9a;
+    --accent:#e8e8e8; --link:#e8e8e8; --warn:#ff6b6b;
+  }
+  html[data-app='kqso'][data-display='eink']{
+    --bg:#ffffff; --panel:#ffffff; --line:#000000; --fg:#000000; --muted:#000000;
+    --accent:#000000; --link:#000000; --warn:#000000; --radius:0; --border-w:2px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{font-family:var(--font);color:var(--fg);padding:32px 16px 64px;max-width:880px;margin-inline:auto;line-height:1.55;}
+  a{color:var(--link);}
+  html[data-app='kqso'] a{text-underline-offset:2px;}
+  h1,h2,h3{font-family:var(--mono);font-weight:600;letter-spacing:-0.01em;}
+  h1{font-size:clamp(26px,5vw,38px);margin:0 0 12px;overflow-wrap:anywhere;}
+  h2{font-size:13px;margin:0 0 14px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;}
+  h3{font-size:15px;margin:22px 0 8px;}
+  html[data-app='kqso'] h1,html[data-app='kqso'] h2,html[data-app='kqso'] h3{font-family:var(--font);}
+  html[data-app='kqso'] h2{font-size:15px;color:var(--fg);text-transform:none;letter-spacing:0;}
+  code,.mono{font-family:var(--mono);overflow-wrap:anywhere;}
+  [hidden]{display:none !important;}
+
+  /* One language at a time. */
+  html[lang='cs'] body [lang='en'], html[lang='en'] body [lang='cs']{display:none !important;}
+
+  .top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;}
+  .eyebrow{font-family:var(--mono);text-transform:uppercase;letter-spacing:.14em;font-size:12px;color:var(--muted);margin:0;}
+  .back{display:none;}
+  html[data-app='kqso'] .eyebrow{display:none;}
+  html[data-app='kqso'] .back{display:inline-block;}
+  .btn{font:600 14px var(--mono);cursor:pointer;background:transparent;color:var(--fg);border:var(--border-w) solid var(--line);border-radius:6px;padding:8px 14px;}
+  html[data-app='kqso'] .btn{font-family:var(--font);border-radius:var(--radius);}
+  .seg{display:flex;gap:6px;}
+  .seg .btn[aria-pressed='true']{background:var(--fg);color:var(--bg);}
+
+  .lede{color:var(--muted);font-size:16px;max-width:62ch;margin:0 0 26px;}
+  .panel{background:var(--panel);border:var(--border-w) solid var(--line);border-radius:var(--radius);padding:22px 22px;margin-bottom:18px;min-width:0;}
+  .panel p,.panel li{font-size:15px;}
+  .muted{color:var(--muted);}
+  ul,ol{padding-left:20px;margin:0;}
+  li{margin-bottom:8px;}
+  li::marker{color:var(--accent);}
+  .note{border-left:3px solid var(--accent);padding:4px 0 4px 12px;margin:14px 0 0;color:var(--muted);font-size:14px;}
+
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:6px 0 4px;}
+  th,td{text-align:left;padding:7px 8px;border-bottom:var(--border-w) solid var(--line);vertical-align:top;}
+  th{color:var(--muted);font-weight:600;}
+  .table-wrap{overflow-x:auto;}
+  td:first-child{white-space:nowrap;}
+  .wire{display:inline-block;width:10px;height:10px;border-radius:50%;border:1px solid var(--line);margin-right:6px;vertical-align:-1px;}
+  html[data-display='eink'] .wire{display:none;}
+
+  .shop{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .shop a{font-size:14px;}
+
+  figure{margin:16px 0 0;}
+  figure svg{width:100%;height:auto;display:block;color:var(--fg);}
+  figure img{width:100%;height:auto;display:block;border-radius:var(--radius);border:var(--border-w) solid var(--line);}
+  figcaption{font-size:13px;color:var(--muted);margin-top:8px;}
+  .photos{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
+  .photos figure{margin:0;}
+
+  .cta{display:inline-block;font:600 15px var(--mono);background:var(--accent);color:var(--bg);text-decoration:none;border-radius:6px;padding:12px 18px;margin-top:6px;}
+  html[data-app='kqso'] .cta{font-family:var(--font);border-radius:var(--radius);}
+  html[data-display='eink'] .cta{background:#000;color:#fff;}
+
+  footer{margin-top:40px;text-align:center;font:12px var(--mono);color:var(--muted);}
+  html[data-app='kqso'] footer{font-family:var(--font);}
+  footer a{margin:0 6px;}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Resistor, horizontal: from (0,0) to (60,0). -->
+    <g id="r-h"><rect x="0" y="-7" width="60" height="14" fill="none" stroke="currentColor" stroke-width="2"/></g>
+    <!-- Resistor, vertical: from (0,0) to (0,40). -->
+    <g id="r-v"><rect x="-7" y="0" width="14" height="40" fill="none" stroke="currentColor" stroke-width="2"/></g>
+    <!-- N-MOSFET: gate plate at x=0 (y 0–40); drain lead ends at (50,5), source at (50,35). -->
+    <g id="nmos" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="0" y1="2" x2="0" y2="38"/>
+      <line x1="10" y1="0" x2="10" y2="10"/><line x1="10" y1="15" x2="10" y2="25"/><line x1="10" y1="30" x2="10" y2="40"/>
+      <polyline points="10,5 50,5"/><polyline points="10,35 50,35"/>
+      <polyline points="10,20 50,20 50,35"/>
+      <polygon points="12,20 22,15 22,25" fill="currentColor"/>
+    </g>
+    <!-- Ground: at (0,0). -->
+    <g id="gnd" stroke="currentColor" stroke-width="2"><line x1="-11" y1="0" x2="11" y2="0"/><line x1="-7" y1="5" x2="7" y2="5"/><line x1="-3" y1="10" x2="3" y2="10"/></g>
+    <!-- Terminal (pin / jack contact). -->
+    <g id="t"><circle r="4" style="fill:var(--bg)" stroke="currentColor" stroke-width="2"/></g>
+  </defs>
+</svg>
+
+<div class="top">
+  <p class="eyebrow">OK1CDJ / M5-ESP32-keyer</p>
+  <button class="btn back" id="back" type="button">‹ kQSO</button>
+  <div class="seg" role="group" aria-label="Language">
+    <button class="btn" type="button" data-lang="en">EN</button>
+    <button class="btn" type="button" data-lang="cs">CS</button>
+  </div>
+</div>
+
+<header>
+  <h1><span lang="en">Build the CW keyer</span><span lang="cs">Postav si klíčovač</span></h1>
+  <p class="lede">
+    <span lang="en">An M5Stack Atom, a few parts soldered straight into the cable, two 3.5 mm jacks. No box, no circuit board. It keys your radio's CW input, and with an Icom it also reads and sets the frequency and mode over CI-V — kQSO then tunes the radio from the log.</span>
+    <span lang="cs">M5Stack Atom, pár součástek zapájených přímo do kabelu a dva jacky 3,5 mm. Žádná krabička ani plošný spoj. Klíčuje CW vstup rádia a s Icomem přes CI-V čte i nastavuje kmitočet a mód — kQSO pak rádio ladí z deníku.</span>
+  </p>
+</header>
+
+<section class="panel">
+  <h2><span lang="en">What you need</span><span lang="cs">Co potřebuješ</span></h2>
+  <ul>
+    <li lang="en"><strong>An M5Stack Atom board</strong> — <strong>AtomS3 Lite</strong> (recommended), Atom Lite, or AtomS3 with a display (shows the frequency).</li>
+    <li lang="cs"><strong>Desku M5Stack Atom</strong> — <strong>AtomS3 Lite</strong> (doporučená), Atom Lite, nebo AtomS3 s displejem (ukazuje kmitočet).</li>
+    <li lang="en">Optional: <strong>Atomic Battery Base</strong> (200 mAh) for running on battery.</li>
+    <li lang="cs">Volitelně: <strong>Atomic Battery Base</strong> (200 mAh) pro provoz na baterii.</li>
+    <li lang="en">A <strong>Grove cable</strong> (HY2.0-4P), cut in half — or a Grove-to-Dupont cable.</li>
+    <li lang="cs"><strong>Grove kabel</strong> (HY2.0-4P), rozstřižený napůl — nebo kabel Grove–Dupont.</li>
+    <li lang="en"><strong>2× cable with a 3.5 mm jack</strong>: one for keying (KEY), one for CI-V (the Icom REMOTE socket).</li>
+    <li lang="cs"><strong>2× kabel s jackem 3,5 mm</strong>: jeden na klíčování (KEY), druhý na CI-V (konektor REMOTE u Icomu).</li>
+    <li lang="en">If your radio's key input is a 6.3 mm jack: a <strong>3.5 → 6.3 mm adapter</strong>.</li>
+    <li lang="cs">Když má rádio klíčovací vstup na jacku 6,3 mm: <strong>redukce 3,5 → 6,3 mm</strong>.</li>
+    <li lang="en">Parts for keying, one of: <strong>A</strong> PC817 optocoupler + 330 Ω + 10 kΩ, or <strong>B</strong> N-MOSFET AO3400 / BSS138 / 2N7000 + 100 Ω + 10 kΩ.</li>
+    <li lang="cs">Součástky na klíčování, jedno z: <strong>A</strong> optočlen PC817 + 330 Ω + 10 kΩ, nebo <strong>B</strong> N-MOSFET AO3400 / BSS138 / 2N7000 + 100 Ω + 10 kΩ.</li>
+    <li lang="en">Parts for CI-V (Icom only): BSS138 or 2N7000 + 10 kΩ + 27 kΩ.</li>
+    <li lang="cs">Součástky na CI-V (jen Icom): BSS138 nebo 2N7000 + 10 kΩ + 27 kΩ.</li>
+    <li lang="en">Heat-shrink tubing, a soldering iron.</li>
+    <li lang="cs">Smršťovací bužírka, páječka.</li>
+  </ul>
+  <h3><span lang="en">Where to buy</span><span lang="cs">Kde koupit</span></h3>
+  <div class="shop">
+    <a href="https://shop.m5stack.com/products/atoms3-lite-esp32s3-dev-kit" target="_blank" rel="noopener">AtomS3 Lite</a> ·
+    <a href="https://shop.m5stack.com/products/atom-lite-esp32-development-kit" target="_blank" rel="noopener">Atom Lite</a> ·
+    <a href="https://shop.m5stack.com/products/atoms3-dev-kit-w-0-85-inch-screen" target="_blank" rel="noopener">AtomS3</a> ·
+    <a href="https://shop.m5stack.com/products/atomic-battery-base-200mah" target="_blank" rel="noopener">Atomic Battery Base</a> ·
+    <a href="https://shop.m5stack.com/products/grove2dupont-conversion-cable-20cm-5pairs" target="_blank" rel="noopener">Grove–Dupont</a>
+    <span class="muted">(M5Stack shop)</span>
+  </div>
+  <p class="muted" style="margin:10px 0 0;font-size:14px;">
+    <span lang="en">In the EU also at <a href="https://botland.store/1182-atom-series" target="_blank" rel="noopener">Botland (Atom series)</a> and other M5Stack resellers. The small parts and jack cables from any electronics shop.</span>
+    <span lang="cs">V EU také <a href="https://botland.store/1182-atom-series" target="_blank" rel="noopener">Botland (řada Atom)</a> a další prodejci M5Stack. Drobné součástky a kabely s jackem v jakémkoli obchodě s elektronikou.</span>
+  </p>
+</section>
+
+<section class="panel">
+  <h2><span lang="en">How it goes together</span><span lang="cs">Jak to do sebe zapadá</span></h2>
+  <p>
+    <span lang="en">The Grove cable leaves the Atom; its four wires split into the two jack cables. The parts sit in the cable, soldered wire to wire, under heat-shrink.</span>
+    <span lang="cs">Grove kabel vede z Atomu; jeho čtyři dráty se rozdělí do dvou kabelů s jackem. Součástky jsou v kabelu, zapájené drát na drát, pod bužírkou.</span>
+  </p>
+  <figure>
+    <svg viewBox="0 0 600 200" role="img" aria-label="Atom, Grove cable, parts in heat-shrink, KEY jack and CI-V jack">
+      <g fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="10" y="70" width="70" height="60" rx="6"/>
+        <line x1="80" y1="100" x2="200" y2="100"/>
+        <rect x="200" y="78" width="130" height="44" rx="20" stroke-dasharray="6 4"/>
+        <path d="M330 92 C380 92 400 50 450 50"/><path d="M330 108 C380 108 400 150 450 150"/>
+        <line x1="450" y1="50" x2="500" y2="50"/><rect x="500" y="42" width="40" height="16" rx="3"/><line x1="540" y1="50" x2="575" y2="50"/>
+        <line x1="450" y1="150" x2="500" y2="150"/><rect x="500" y="142" width="40" height="16" rx="3"/><line x1="540" y1="150" x2="575" y2="150"/>
+      </g>
+      <g fill="currentColor" font-size="18" font-family="inherit">
+        <text x="45" y="104" text-anchor="middle">Atom</text>
+        <text x="140" y="92" text-anchor="middle">Grove</text>
+        <text x="265" y="104" text-anchor="middle" lang="en">parts</text>
+        <text x="265" y="104" text-anchor="middle" lang="cs">součástky</text>
+        <text x="265" y="140" text-anchor="middle" font-size="15" lang="en">heat-shrink</text>
+        <text x="265" y="140" text-anchor="middle" font-size="15" lang="cs">bužírka</text>
+        <text x="520" y="32" text-anchor="middle">KEY 3.5 mm</text>
+        <text x="520" y="180" text-anchor="middle">CI-V 3.5 mm</text>
+        <text x="520" y="196" text-anchor="middle" font-size="15">Icom REMOTE</text>
+      </g>
+    </svg>
+  </figure>
+  <h3><span lang="en">Grove pins</span><span lang="cs">Piny Grove</span></h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th><span lang="en">wire</span><span lang="cs">drát</span></th><th><span lang="en">function</span><span lang="cs">funkce</span></th><th>AtomS3 / AtomS3 Lite</th><th>Atom Lite</th></tr></thead>
+      <tbody>
+        <tr><td><span class="wire" style="background:#111"></span><span lang="en">black</span><span lang="cs">černý</span></td><td>GND</td><td>GND</td><td>GND</td></tr>
+        <tr><td><span class="wire" style="background:#d33"></span><span lang="en">red</span><span lang="cs">červený</span></td><td>5V</td><td>5V</td><td>5V</td></tr>
+        <tr><td><span class="wire" style="background:#e8c000"></span><span lang="en">yellow</span><span lang="cs">žlutý</span></td><td><strong>KEY</strong></td><td>G2</td><td>G26</td></tr>
+        <tr><td><span class="wire" style="background:#fff"></span><span lang="en">white</span><span lang="cs">bílý</span></td><td><strong>CIV</strong></td><td>G1</td><td>G32</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="note">
+    <span lang="en">Jacks: <strong>tip</strong> = key (or CI-V), <strong>sleeve</strong> = ground. The colours are the usual Grove ones — check with a multimeter if your cable differs.</span>
+    <span lang="cs">Jacky: <strong>hrot</strong> (tip) = klíč (nebo CI-V), <strong>objímka</strong> (sleeve) = zem. Barvy jsou obvyklé u Grove kabelů — u jiného kabelu je ověř multimetrem.</span>
+  </p>
+</section>
+
+<section class="panel">
+  <h2><span lang="en">Keying — pick one</span><span lang="cs">Klíčování — vyber jedno</span></h2>
+
+  <h3>A · <span lang="en">Optocoupler (isolated)</span><span lang="cs">Optočlen (oddělený)</span></h3>
+  <p>
+    <span lang="en">The keyer and the radio share no ground. Use it when the radio's ground may sit at another potential (separate supply, a computer on the same cable).</span>
+    <span lang="cs">Klíčovač a rádio nemají společnou zem. Použij, když může být zem rádia na jiném potenciálu (jiný zdroj, počítač na stejném kabelu).</span>
+  </p>
+  <figure>
+    <svg viewBox="0 0 560 210" role="img" aria-label="KEY pin, 330 ohm to PC817 LED, 10 k pull-down; PC817 transistor to the jack tip and sleeve">
+      <g fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="40" y1="60" x2="100" y2="60"/><use href="#r-h" x="100" y="60"/><line x1="160" y1="60" x2="270" y2="60"/>
+        <line x1="75" y1="60" x2="75" y2="100"/><use href="#r-v" x="75" y="100"/><line x1="75" y1="140" x2="75" y2="170"/>
+        <rect x="235" y="35" width="130" height="125" rx="4" stroke-dasharray="5 4"/>
+        <line x1="270" y1="60" x2="270" y2="82"/>
+        <polygon points="258,82 282,82 270,102"/><line x1="258" y1="102" x2="282" y2="102"/>
+        <line x1="270" y1="102" x2="270" y2="135"/><line x1="270" y1="135" x2="200" y2="135"/><line x1="200" y1="135" x2="200" y2="170"/>
+        <line x1="290" y1="86" x2="306" y2="92"/><line x1="290" y1="98" x2="306" y2="104"/>
+        <line x1="320" y1="75" x2="320" y2="120"/>
+        <polyline points="320,88 340,72 340,60 470,60"/>
+        <polyline points="320,108 340,124 340,135 470,135"/>
+        <polygon points="340,124 330,122 336,114" fill="currentColor"/>
+      </g>
+      <use href="#gnd" x="75" y="170"/><use href="#gnd" x="200" y="170"/>
+      <use href="#t" x="40" y="60"/><use href="#t" x="470" y="60"/><use href="#t" x="470" y="135"/>
+      <g fill="currentColor" font-size="18" font-family="inherit">
+        <text x="40" y="45" text-anchor="middle">KEY</text>
+        <text x="130" y="44" text-anchor="middle">330 Ω</text>
+        <text x="58" y="125" text-anchor="end">10 kΩ</text>
+        <text x="300" y="30" text-anchor="middle">PC817</text>
+        <text x="258" y="74" font-size="15">1</text><text x="258" y="130" font-size="15">2</text>
+        <text x="350" y="55" font-size="15">4</text><text x="350" y="150" font-size="15">3</text>
+        <text x="480" y="64">tip</text><text x="480" y="139">sleeve</text>
+        <text x="480" y="82" font-size="15" lang="en">(key)</text><text x="480" y="82" font-size="15" lang="cs">(klíč)</text>
+        <text x="138" y="200" text-anchor="middle" font-size="15">GND (Grove)</text>
+      </g>
+    </svg>
+    <figcaption>
+      <span lang="en">330 Ω gives the LED about 6 mA. The 10 kΩ pull-down holds KEY low during a reset.</span>
+      <span lang="cs">330 Ω dá LED asi 6 mA. Pull-down 10 kΩ drží KEY dole i během resetu.</span>
+    </figcaption>
+  </figure>
+
+  <h3>B · <span lang="en">N-MOSFET (shared ground)</span><span lang="cs">N-MOSFET (společná zem)</span></h3>
+  <p>
+    <span lang="en">Fewer parts. The Grove ground connects to the radio's ground through the jack sleeve — and CI-V needs this shared ground anyway.</span>
+    <span lang="cs">Méně součástek. Zem z Grove se přes objímku jacku spojí se zemí rádia — a CI-V tuhle společnou zem stejně potřebuje.</span>
+  </p>
+  <figure>
+    <svg viewBox="0 0 560 200" role="img" aria-label="KEY pin, 100 ohm to the MOSFET gate, 10 k gate to source; drain to the jack tip, source to ground and the sleeve">
+      <g fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="40" y1="70" x2="90" y2="70"/><use href="#r-h" x="90" y="70"/><line x1="150" y1="70" x2="250" y2="70"/>
+        <line x1="190" y1="70" x2="190" y2="95"/><use href="#r-v" x="190" y="95"/><line x1="190" y1="135" x2="190" y2="160"/>
+        <use href="#nmos" x="250" y="50"/>
+        <polyline points="300,55 300,30 470,30"/>
+        <line x1="300" y1="85" x2="300" y2="160"/>
+        <line x1="40" y1="160" x2="470" y2="160"/>
+      </g>
+      <use href="#t" x="40" y="70"/><use href="#t" x="40" y="160"/><use href="#t" x="470" y="30"/><use href="#t" x="470" y="160"/>
+      <g fill="currentColor" font-size="18" font-family="inherit">
+        <text x="40" y="55" text-anchor="middle">KEY</text>
+        <text x="120" y="54" text-anchor="middle">100 Ω</text>
+        <text x="174" y="120" text-anchor="end">10 kΩ</text>
+        <text x="320" y="62" font-size="15">D</text><text x="236" y="66" font-size="15">G</text><text x="306" y="110" font-size="15">S</text>
+        <text x="330" y="100" font-size="16">AO3400 / BSS138 / 2N7000</text>
+        <text x="480" y="34">tip</text><text x="480" y="164">sleeve</text>
+        <text x="480" y="52" font-size="15" lang="en">(key)</text><text x="480" y="52" font-size="15" lang="cs">(klíč)</text>
+        <text x="22" y="188" font-size="15">GND (Grove)</text>
+      </g>
+    </svg>
+    <figcaption>
+      <span lang="en">Mind the polarity: the <strong>drain</strong> goes to the tip. Swapped, the MOSFET's body diode keys the radio all the time. The 10 kΩ keeps the MOSFET off during a reset.</span>
+      <span lang="cs">Pozor na polaritu: na hrot patří <strong>drain</strong>. Obráceně vnitřní dioda MOSFETu klíčuje rádio pořád. 10 kΩ drží MOSFET zavřený i během resetu.</span>
+    </figcaption>
+  </figure>
+</section>
+
+<section class="panel">
+  <h2><span lang="en">CI-V — Icom frequency and mode</span><span lang="cs">CI-V — kmitočet a mód z Icomu</span></h2>
+  <p>
+    <span lang="en">The CI-V bus is one wire, pulled up to 5 V inside the radio. One MOSFET shifts it to the Atom's 3.3 V in both directions. Everything comes from the Grove cable. Needs the shared ground (variant B).</span>
+    <span lang="cs">Sběrnice CI-V je jeden drát, v rádiu vytažený na 5 V. Jeden MOSFET ho oběma směry převede na 3,3 V Atomu. Vše se bere z Grove kabelu. Potřebuje společnou zem (varianta B).</span>
+  </p>
+  <figure>
+    <svg viewBox="0 0 560 220" role="img" aria-label="5 V through 10 k and 27 k to ground, the middle to the MOSFET gate; CIV pin to the source, the drain to the REMOTE tip">
+      <g fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="40" y1="30" x2="150" y2="30"/><line x1="150" y1="30" x2="150" y2="45"/><use href="#r-v" x="150" y="45"/>
+        <line x1="150" y1="85" x2="150" y2="115"/><use href="#r-v" x="150" y="115"/><line x1="150" y1="155" x2="150" y2="190"/>
+        <line x1="150" y1="100" x2="250" y2="100"/>
+        <use href="#nmos" x="250" y="80"/>
+        <polyline points="300,85 300,50 470,50"/>
+        <line x1="300" y1="115" x2="300" y2="160"/><line x1="40" y1="160" x2="300" y2="160"/>
+        <line x1="40" y1="190" x2="470" y2="190"/>
+      </g>
+      <circle cx="150" cy="100" r="3.5" fill="currentColor"/>
+      <use href="#t" x="40" y="30"/><use href="#t" x="40" y="160"/><use href="#t" x="40" y="190"/><use href="#t" x="470" y="50"/><use href="#t" x="470" y="190"/>
+      <g fill="currentColor" font-size="18" font-family="inherit">
+        <text x="40" y="18" text-anchor="middle">5V</text>
+        <text x="166" y="70">10 kΩ</text><text x="166" y="140">27 kΩ</text>
+        <text x="200" y="94" font-size="15">≈ 3.6 V</text>
+        <text x="40" y="148" text-anchor="middle">CIV</text>
+        <text x="22" y="214" font-size="15">GND (Grove)</text>
+        <text x="320" y="92" font-size="15">D</text><text x="306" y="140" font-size="15">S</text>
+        <text x="330" y="125" font-size="16">BSS138 / 2N7000</text>
+        <text x="480" y="54">tip</text><text x="480" y="72" font-size="15">(CI-V)</text><text x="480" y="194">sleeve</text>
+        <text x="470" y="30" text-anchor="middle" font-size="15">REMOTE</text>
+      </g>
+    </svg>
+    <figcaption>
+      <span lang="en">No pull-up on the keyer side: the firmware turns on the ESP32's own. With the keyer off, the divider has no voltage and the radio's bus is left alone.</span>
+      <span lang="cs">Na straně klíčovače žádný pull-up: firmware zapne vnitřní pull-up ESP32. Vypnutý klíčovač nemá na děliči napětí a sběrnici rádia nechá být.</span>
+    </figcaption>
+  </figure>
+</section>
+
+<section class="panel" id="photos" hidden>
+  <h2><span lang="en">Photos</span><span lang="cs">Fotky</span></h2>
+  <div class="photos">
+    <!-- Photos go here as they come, e.g.:
+    <figure><img src="img/keyer-cable.jpg" alt="…" loading="lazy"><figcaption><span lang="en">…</span><span lang="cs">…</span></figcaption></figure>
+    — and remove `hidden` from the section. -->
+  </div>
+</section>
+
+<section class="panel">
+  <h2><span lang="en">Flash the firmware</span><span lang="cs">Nahraj firmware</span></h2>
+  <p>
+    <span lang="en">Straight from the browser, no IDE, no drivers: Chrome or Edge on a computer, a USB-C data cable.</span>
+    <span lang="cs">Přímo z prohlížeče, bez IDE a ovladačů: Chrome nebo Edge na počítači, datový kabel USB-C.</span>
+  </p>
+  <a class="cta" href="index.html"><span lang="en">Open the web flasher →</span><span lang="cs">Otevřít webový flasher →</span></a>
+</section>
+
+<section class="panel">
+  <h2><span lang="en">Get it going</span><span lang="cs">Zprovozni</span></h2>
+  <ol>
+    <li lang="en">In the radio: <strong>CI-V Transceive ON</strong>; any CI-V rate (1200–19200 Bd) or Auto. The keyer finds the rate and the radio's address itself.</li>
+    <li lang="cs">V rádiu: <strong>CI-V Transceive ON</strong>; libovolná rychlost CI-V (1200–19200 Bd) nebo Auto. Rychlost i adresu rádia najde klíčovač sám.</li>
+    <li lang="en">In kQSO: <strong>Settings → M5 keyer → Connect</strong>. For CW switch on <strong>CW keying</strong>; for the radio <strong>Radio → Yes → Via the keyer</strong>.</li>
+    <li lang="cs">V kQSO: <strong>Nastavení → Klíčovač M5 → Připojit</strong>. Pro CW zapni <strong>CW klíčování</strong>, pro rádio <strong>Rádio → Ano → Přes klíčovač</strong>.</li>
+    <li lang="en">Other programs (cwdaemon, HTTP, your own scripts): see the <a href="https://github.com/ok1cdj/M5-ESP32-keyer/blob/master/PROTOCOL.md" target="_blank" rel="noopener">protocol</a> and the <a href="index.html#configure">Bluetooth configuration</a>.</li>
+    <li lang="cs">Jiné programy (cwdaemon, HTTP, vlastní skripty): viz <a href="https://github.com/ok1cdj/M5-ESP32-keyer/blob/master/PROTOCOL.md" target="_blank" rel="noopener">protokol</a> a <a href="index.html#configure">nastavení přes Bluetooth</a>.</li>
+  </ol>
+  <h3><span lang="en">Check</span><span lang="cs">Kontrola</span></h3>
+  <ul>
+    <li lang="en">A macro in kQSO (or <em>Send</em> on the flasher page) keys the radio.</li>
+    <li lang="cs">Makro v kQSO (nebo <em>Send</em> na stránce flasheru) klíčuje rádio.</li>
+    <li lang="en">Turn the VFO: the frequency follows in kQSO (and on the AtomS3 display). A radio with a changed CI-V address is found once you turn the knob.</li>
+    <li lang="cs">Otoč VFO: kmitočet se změní v kQSO (i na displeji AtomS3). Rádio se změněnou adresou CI-V se najde, jakmile otočíš knoflíkem.</li>
+  </ul>
+</section>
+
+<footer>
+  <a href="index.html"><span lang="en">Web flasher</span><span lang="cs">Webový flasher</span></a> ·
+  <a href="https://github.com/ok1cdj/M5-ESP32-keyer#readme" target="_blank" rel="noopener">README</a> ·
+  <a href="https://kqso.ok1cdj.com" target="_blank" rel="noopener">kQSO</a>
+  <p>&copy; 2026 Ondrej Kolonicny (OK1CDJ) · GPL-3.0</p>
+</footer>
+
+<script>
+  (function(){
+    var h = document.documentElement;
+    function setLang(l){
+      h.lang = l;
+      document.querySelectorAll('[data-lang]').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.lang === l)); });
+      document.title = l === 'cs' ? 'Postav si klíčovač' : 'Build the CW keyer';
+    }
+    document.querySelectorAll('[data-lang]').forEach(function(b){ b.addEventListener('click', function(){ setLang(b.dataset.lang); }); });
+    setLang(h.lang);
+    // From kQSO (opened in a new tab / the system browser): close it, else go back.
+    document.getElementById('back').addEventListener('click', function(){
+      window.close();
+      setTimeout(function(){ if (history.length > 1) history.back(); }, 300);
+    });
+    // Photos show once there are any.
+    var photos = document.getElementById('photos');
+    if (photos.querySelector('figure')) photos.hidden = false;
+  })();
+</script>
+</body>
+</html>
