@@ -11,11 +11,11 @@ Protocol for clients (kQSO, nRF Connect, scripts): [PROTOCOL.md](PROTOCOL.md)
 
 ## Boards
 
-| board | chip | key output | paddles (reserved) | battery ADC | display |
-|---|---|---|---|---|---|
-| M5 **AtomS3 Lite** | ESP32-S3 | G2 (Grove) | G6 dot, G7 dash | G8 | – |
-| M5 **Atom Lite** | ESP32-PICO-D4 | G26 (Grove) | G19 dot, G23 dash | G33 | – |
-| M5 **AtomS3** | ESP32-S3 | G2 (Grove) | G6 dot, G7 dash | G8 | 128×128 |
+| board | chip | key output | CI-V | paddles (reserved) | battery ADC | display |
+|---|---|---|---|---|---|---|
+| M5 **AtomS3 Lite** | ESP32-S3 | G2 (Grove) | G1 (Grove) | G6 dot, G7 dash | G8 | – |
+| M5 **Atom Lite** | ESP32-PICO-D4 | G26 (Grove) | G32 (Grove) | G19 dot, G23 dash | G33 | – |
+| M5 **AtomS3** | ESP32-S3 | G2 (Grove) | G1 (Grove) | G6 dot, G7 dash | G8 | 128×128 |
 
 - **Same wiring on every board.** The functions sit on the same positions on all boards:
   - **Grove** (to the radio): `GND · 5V · CIV · KEY`. KEY is the SDA pin (Atom Lite G26, AtomS3 G2), CIV the SCL pin (Atom Lite G32, AtomS3 G1).
