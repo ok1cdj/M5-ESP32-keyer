@@ -75,7 +75,6 @@ CIV pin ──────── source  BSS138 / 2N7000  drain ──► REMOTE
 - **A plain diode does not work here:** it passes a low level in one direction only, so the keyer could either send or receive, not both.
 - Before connecting, measure the open-circuit voltage between the REMOTE tip and the sleeve: about 5 V is expected. If the radio's pull-up turns out to be missing (0 V), add 10 kΩ from the tip to the Grove 5V.
 - In the radio: **CI-V Transceive ON** (the keyer then hears every change at once) and any rate from 1200 to 19200 Bd, or Auto. The keyer finds the rate and the address by itself and remembers the rig. A rig with a changed address (an IC-706MkII here was at 4D) is found the first time when you turn the VFO knob. With Transceive off it polls once a second; that works for the default addresses (IC-706 family, IC-910, IC-7300) and the remembered rig, otherwise set them with `CIV <baud> <addr>` over BLE.
-- The AtomS3 display can be rotated in 90° steps: on the HTTP page under Settings, or with `ROTATE <deg>` over BLE or HTTP.
 - The frequency appears on the AtomS3 display, as `FREQ <Hz> <mode>` messages over BLE after `FREQ ON`, on the HTTP page and through the `FREQ` command ([PROTOCOL.md](PROTOCOL.md)).
 - Another controller on the same bus (a logging program through a CI-V interface) is fine; the keyer only asks when the radio is silent.
 
@@ -116,6 +115,8 @@ http://keyer-XXXX.local/cmd?apikey=KEY&c=STATUS
 http://keyer-XXXX.local/?apikey=KEY         simple web page
 ```
 
+The web page sends text, sets the speed, shows the radio's frequency and, on the AtomS3, has the display rotation under Settings.
+
 `apikey` is required only after you have set one with `APIKEY`.
 
 ## Controls
@@ -127,7 +128,8 @@ The same on all boards. On the AtomS3, pressing the screen is the button.
 - **Client connects or disconnects:** a short blink.
 - **Button press:** a short blink, so you can see the press was registered.
 - **AtomS3 display:**
-  - shows the mode, IP address, WPM, battery and, while sending, the next 10 characters of the text, the one being sent in red (prosigns without brackets),
+  - shows the mode, IP address, WPM, battery, the radio's frequency and mode (CI-V) and, while sending, the next 10 characters of the text, the one being sent in red (prosigns without brackets),
+  - can be rotated in 90° steps: on the HTTP page under Settings, or with `ROTATE <deg>` over BLE or HTTP; the setting is stored,
   - after 10 s of inactivity the backlight turns off and the panel goes to sleep; it stays on while sending,
   - the display wakes up when a client connects, when sending starts or ends, and on STOP.
 
@@ -178,7 +180,7 @@ pio run -e atoms3-lite -t upload
 
 ### Hardware checklist
 
-Tested so far on AtomS3 Lite, AtomS3 and Atom Lite. Real keying of a radio through the Grove port, with both the PC817 and the N-MOSFET, was checked on the AtomS3 (over BLE) and the Atom Lite (over cwdaemon); the AtomS3 Lite has the same pin as the AtomS3 but hasn't keyed a radio yet.
+Tested so far on AtomS3 Lite, AtomS3 and Atom Lite. Real keying of a radio through the Grove port, with both the PC817 and the N-MOSFET, was checked on the AtomS3 (over BLE) and the Atom Lite (over cwdaemon); the AtomS3 Lite has the same pin as the AtomS3 but hasn't keyed a radio yet. CI-V has been tested on the AtomS3 only (with an IC-706MkII); the other boards build the same code with different pins.
 
 - [x] The radio keys correctly at 20 WPM (PARIS).
 - [x] The output stays open after power-on and after a reset, including a reset in the middle of a message.

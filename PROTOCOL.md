@@ -20,7 +20,7 @@ A plain-text line protocol for sending CW through the keyer. BLE uses it directl
 | `WPM <n>` | set speed, 5–50 WPM, stored in NVS | `OK` / `ERR range` |
 | `STOP` | stop immediately, even mid-character, and drop the queue | `OK` |
 | `STATUS` | current state | `IDLE WPM 22` / `SENDING 14 WPM 22` |
-| `VER` | firmware and protocol version | `VER keyer 2.0.0 proto 1` |
+| `VER` | firmware and protocol version | `VER keyer 2.1.0 proto 1` |
 | `WIFI <ssid>\t<password>` | store Wi-Fi credentials (BLE only) | `OK` |
 | `MODE BLE\|HTTP\|CWD` | store the mode and restart (BLE only) | `OK`, then restart |
 | `APIKEY <key>` | store the HTTP API key; empty = no authentication (BLE only) | `OK` |
@@ -38,7 +38,7 @@ A plain-text line protocol for sending CW through the keyer. BLE uses it directl
 - `WIFI`: the separator is a **tab**, because an SSID may contain spaces. An empty password (`WIFI cafe\t`) means an open network.
 - `WIFI`, `MODE` and `APIKEY` are refused with `ERR mode` outside BLE mode.
 - `MODE` stops any transmission, answers `OK` and restarts about 300 ms later.
-- `FREQ` and `CIV` need firmware 2.1.0 or later. `FREQ` modes: `LSB USB AM CW RTTY FM WFM CW-R RTTY-R`, `?` for any other. `FREQ NONE` means no rig has answered on the CI-V bus, or CI-V is off.
+- `FREQ`, `CIV`, `CIVTX`, `CIVRX` and `ROTATE` need firmware 2.1.0 or later. `FREQ` modes: `LSB USB AM CW RTTY FM WFM CW-R RTTY-R`, `?` for any other. `FREQ NONE` means no rig has answered on the CI-V bus, or CI-V is off.
 - `FREQ ON` is off again for every new BLE connection, so a client that doesn't know it never gets an unexpected line. With `FREQ ON`, take the frequency from the asynchronous messages only: the response to a bare `FREQ` looks the same and can't be told apart.
 - `CIV` works in every mode; with arguments it is BLE only and takes effect at once, without a restart. The setting is stored in NVS.
   - `AUTO` (default) tries 19200, 9600, 4800 and 1200 Bd and takes the rig address from the first frame it hears. It also asks the rig found last time (stored), then the common default addresses (IC-706 family 58/4E/48, IC-910 60, IC-7300 94), so it finds a rig with Transceive off or quiet. A rig with a changed address is found the first time once it sends something (turn the VFO knob); after that it is remembered.
@@ -113,7 +113,7 @@ Timing is PARIS: dit = 1200 / WPM ms, dah = 3 dits, element gap 1, character gap
 
 The keyer announces itself over mDNS as `keyer-XXXX.local`.
 
-- `GET /cmd?c=<line>` (or `POST /cmd` with form field `c`): runs one protocol command and returns the response line as `text/plain`. `WIFI`, `MODE` and `APIKEY` return `ERR mode`.
+- `GET /cmd?c=<line>` (or `POST /cmd` with form field `c`): runs one protocol command and returns the response line as `text/plain`. `WIFI`, `MODE`, `APIKEY`, `CIV` with arguments, `FREQ ON|OFF`, `CIVTX` and `CIVRX` return `ERR mode`.
 - `GET /sendmorse?message=<text>&speed=<wpm>` works as in v1:
   - `speed` applies immediately,
   - `message` replaces whatever is being sent,
