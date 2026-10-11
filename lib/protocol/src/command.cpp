@@ -153,6 +153,17 @@ Command parse(const std::string& line, Mode active) {
         if (u != "ON" && u != "OFF") return error("arg");
         c.cmd = Cmd::CivRx;
         c.watch = u == "ON";
+    } else if (word == "ROTATE") {
+        // Harmless, so allowed in every mode, unlike the other settings.
+        c.cmd = Cmd::Rotate;
+        if (arg.empty()) {
+            c.rotateQuery = true;
+        } else {
+            int deg;
+            if (!parseInt(arg, deg)) return error("arg");
+            if (deg % 90 != 0 || deg > 270) return error("range");
+            c.rotation = deg / 90;
+        }
     } else if (word == "CIV") {
         // Reading is harmless, changing is BLE-only like the other settings.
         if (!arg.empty() && active != Mode::Ble) return error("mode");

@@ -31,6 +31,8 @@ A plain-text line protocol for sending CW through the keyer. BLE uses it directl
 | `CIV` | CI-V setting and the detected rate and rig address | `CIV AUTO 19200 58` |
 | `CIV OFF\|AUTO` | CI-V off, or automatic detection (BLE only) | `OK` |
 | `CIV <baud> <addr>` | fixed rate and rig address in hex (BLE only) | `OK` / `ERR range` |
+| `ROTATE` | display rotation in degrees (AtomS3) | `ROTATE 180` / `ROTATE NONE` |
+| `ROTATE 0\|90\|180\|270` | rotate the display at once, stored in NVS; every mode | `OK` / `ERR range` / `ERR nodisplay` |
 
 - `SENDING 14`: the number of characters not yet fully sent. It includes the one on the air, and spaces count as characters.
 - `WIFI`: the separator is a **tab**, because an SSID may contain spaces. An empty password (`WIFI cafe\t`) means an open network.
@@ -53,6 +55,7 @@ A plain-text line protocol for sending CW through the keyer. BLE uses it directl
 | `ERR mode` | command not allowed in the current mode |
 | `ERR length` | line longer than 256 characters |
 | `ERR busy` | the keyer event queue (or the CI-V send queue) is full; retry |
+| `ERR nodisplay` | `ROTATE` with an angle on a board without a display |
 | `ERR norig` | `CIVTX` while no radio has been found on the CI-V bus |
 
 ## Asynchronous messages

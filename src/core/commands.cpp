@@ -7,6 +7,7 @@
 #include "core/keyer_task.h"
 #include "radio/radio.h"
 #include "settings.h"
+#include "ui/ui.h"
 #include "version.h"
 
 namespace commands {
@@ -72,6 +73,12 @@ std::string execute(const std::string& line, proto::Mode active) {
             }
             settings::setCivConfig(c.civ);
             radio::configure(c.civ);
+            return "OK";
+        case proto::Cmd::Rotate:
+            if (!ui::hasDisplay()) return c.rotateQuery ? "ROTATE NONE" : "ERR nodisplay";
+            if (c.rotateQuery) return "ROTATE " + std::to_string(ui::rotation() * 90);
+            settings::setRotation(uint8_t(c.rotation));
+            ui::setRotation(uint8_t(c.rotation));
             return "OK";
         case proto::Cmd::Error:
             break;

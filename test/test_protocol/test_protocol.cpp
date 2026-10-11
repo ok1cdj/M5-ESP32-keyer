@@ -171,6 +171,20 @@ void test_parse_civ_tunnel() {
     TEST_ASSERT_EQUAL_STRING("mode", parse("CIVRX ON", Mode::Cwd).error);
 }
 
+void test_parse_rotate() {
+    Command q = parse("ROTATE", Mode::Http);
+    TEST_ASSERT_TRUE(q.cmd == Cmd::Rotate);
+    TEST_ASSERT_TRUE(q.rotateQuery);
+    Command r = parse("rotate 270", Mode::Http);
+    TEST_ASSERT_TRUE(r.cmd == Cmd::Rotate);
+    TEST_ASSERT_FALSE(r.rotateQuery);
+    TEST_ASSERT_EQUAL(3, r.rotation);
+    TEST_ASSERT_EQUAL(0, parse("ROTATE 0", Mode::Ble).rotation);
+    TEST_ASSERT_EQUAL_STRING("range", parse("ROTATE 45", Mode::Ble).error);
+    TEST_ASSERT_EQUAL_STRING("range", parse("ROTATE 360", Mode::Ble).error);
+    TEST_ASSERT_EQUAL_STRING("arg", parse("ROTATE left", Mode::Ble).error);
+}
+
 void test_formatting() {
     TEST_ASSERT_EQUAL_STRING("IDLE WPM 22", formatStatus(false, 0, 22).c_str());
     TEST_ASSERT_EQUAL_STRING("SENDING 14 WPM 22", formatStatus(true, 14, 22).c_str());
@@ -189,6 +203,7 @@ int main() {
     RUN_TEST(test_ble_only_commands);
     RUN_TEST(test_parse_freq_and_civ);
     RUN_TEST(test_parse_civ_tunnel);
+    RUN_TEST(test_parse_rotate);
     RUN_TEST(test_formatting);
     return UNITY_END();
 }

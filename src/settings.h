@@ -25,6 +25,10 @@ void setWifi(const std::string& ssid, const std::string& password);
 std::string apiKey();
 void setApiKey(const std::string& key);
 
+// Display rotation in quarter turns, 0-3.
+uint8_t rotation();
+void setRotation(uint8_t r);
+
 civ::Config civConfig();
 void setCivConfig(const civ::Config& cfg);
 // The rig the automatic detection found last; rig 0 = none yet.

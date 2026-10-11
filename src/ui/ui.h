@@ -8,6 +8,10 @@
 
 namespace ui {
 
+bool hasDisplay();
+// Display rotation in quarter turns, 0-3; before begin() or from any task.
+void setRotation(uint8_t r);
+uint8_t rotation();
 void begin();
 void showModeChoice(proto::Mode m);  // boot-time mode selection
 void showMode(proto::Mode m);        // after start, then dark

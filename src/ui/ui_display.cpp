@@ -2,6 +2,8 @@
 // as on the Lite boards (pressing the screen is the button).
 #include <M5Unified.h>
 
+#include <atomic>
+
 #include "battery.h"
 #include "core/keyer_task.h"
 #include "ui/ui.h"
@@ -38,6 +40,9 @@ uint32_t lastActivity = 0;
 std::string shown[LINES];
 bool clearAll = true;  // screen content unknown, clear it before drawing
 bool asleep = false;   // panel in sleep mode, backlight off
+// Set from the command tasks, applied by loop().
+std::atomic<uint8_t> wantedRotation{0};
+uint8_t appliedRotation = 0;
 
 void wake() {
     if (asleep) {
@@ -109,8 +114,18 @@ void drawLine(Line i, const std::string& text) {
 
 }  // namespace
 
+bool hasDisplay() { return true; }
+
+void setRotation(uint8_t r) {
+    wantedRotation = r & 3;
+    wakePending = true;
+}
+
+uint8_t rotation() { return wantedRotation; }
+
 void begin() {
-    M5.Display.setRotation(0);
+    appliedRotation = wantedRotation;
+    M5.Display.setRotation(appliedRotation);
     M5.Display.fillScreen(TFT_BLACK);
     wake();
 }
@@ -157,6 +172,11 @@ void loop() {
     }
     // Stay lit while sending so the ticker can be followed.
     if (!asleep && keyer_task::snapshot().sending) darkAt = millis() + BACKLIGHT_MS;
+    if (wantedRotation != appliedRotation) {
+        appliedRotation = wantedRotation;
+        M5.Display.setRotation(appliedRotation);
+        clearAll = true;
+    }
     if (!asleep) {
         if (clearAll) {
             M5.Display.fillScreen(TFT_BLACK);

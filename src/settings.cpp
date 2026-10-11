@@ -49,6 +49,12 @@ void setWifi(const std::string& ssid, const std::string& password) {
 std::string apiKey() { return getString("apikey"); }
 void setApiKey(const std::string& key) { prefs.putString("apikey", key.c_str()); }
 
+uint8_t rotation() { return prefs.getUChar("rot", 0) & 3; }
+
+void setRotation(uint8_t r) {
+    if (prefs.getUChar("rot", 0) != r) prefs.putUChar("rot", r);
+}
+
 civ::Config civConfig() {
     civ::Config c;
     uint8_t m = prefs.getUChar("civ", uint8_t(civ::LinkMode::Auto));

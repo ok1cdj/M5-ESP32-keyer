@@ -78,6 +78,7 @@ void setup() {
     Serial.printf("\nM5-ESP32-keyer %s (%s)\n", FW_VERSION, BOARD_NAME);
 
     settings::begin();
+    ui::setRotation(settings::rotation());
     ui::begin();
     mode_select::runIfButtonHeld();
 

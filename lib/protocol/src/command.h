@@ -34,6 +34,7 @@ enum class Cmd : uint8_t {
     Civ,    // civQuery, or set `civ`
     CivTx,  // a CI-V frame for the radio: `frame`
     CivRx,  // CIVRX ON / OFF: `watch`
+    Rotate,  // rotateQuery, or set `rotation`
     Error,  // answer with "ERR " + error
 };
 
@@ -46,6 +47,8 @@ struct Command {
     Mode mode = Mode::Ble;
     bool watch = false;
     bool civQuery = false;
+    bool rotateQuery = false;
+    int rotation = 0;  // ROTATE: display rotation in quarter turns, 0-3
     civ::Config civ;
     std::vector<uint8_t> frame;  // CIVTX, checked by civ::addressFrame
 };

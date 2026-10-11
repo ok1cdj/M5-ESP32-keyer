@@ -20,17 +20,20 @@ const char PAGE[] PROGMEM = R"HTML(<!doctype html>
 <title>CW keyer</title>
 <style>
 body{font-family:system-ui,sans-serif;max-width:32rem;margin:1rem auto;padding:0 1rem;background:#fff;color:#111}
-@media(prefers-color-scheme:dark){body{background:#111;color:#eee}input,button{background:#222;color:#eee;border-color:#555}}
-input,button{font-size:1.1rem;padding:.5rem;border:1px solid #999;border-radius:.4rem;box-sizing:border-box}
+@media(prefers-color-scheme:dark){body{background:#111;color:#eee}input,button,select{background:#222;color:#eee;border-color:#555}}
+input,button,select{font-size:1.1rem;padding:.5rem;border:1px solid #999;border-radius:.4rem;box-sizing:border-box}
 #msg{width:100%;margin-bottom:.5rem}#wpm{width:5rem}
 .row{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
 #stop{background:#c00;color:#fff;border-color:#c00}#st{margin-top:1rem;font-family:monospace}#fq{font-family:monospace}
+details{margin-top:1.5rem}summary{cursor:pointer}
 </style></head><body>
 <h1>CW keyer</h1>
 <input id="msg" placeholder="CQ CQ DE ..." autofocus>
 <div class="row"><button id="send">Send</button><button id="stop">STOP</button>
 <label>WPM <input id="wpm" type="number" min="5" max="50"></label><button id="set">Set</button></div>
 <div id="st"></div><div id="fq"></div>
+<details id="cfg" hidden><summary>Settings</summary><div class="row" style="margin-top:.5rem">
+<label>Display rotation <select id="rot"><option>0</option><option>90</option><option>180</option><option>270</option></select></label></div></details>
 <script>
 const key=new URLSearchParams(location.search).get('apikey')||'';
 async function cmd(c){const r=await fetch('/cmd?apikey='+encodeURIComponent(key)+'&c='+encodeURIComponent(c));return r.text();}
@@ -42,6 +45,9 @@ document.getElementById('send').onclick=async()=>{const m=document.getElementByI
 document.getElementById('msg').onkeydown=e=>{if(e.key==='Enter')document.getElementById('send').click();};
 document.getElementById('stop').onclick=async()=>{await cmd('STOP');status();};
 document.getElementById('set').onclick=async()=>{document.getElementById('st').textContent=await cmd('WPM '+document.getElementById('wpm').value);};
+(async()=>{const m=(await cmd('ROTATE')).match(/^ROTATE (\d+)/);
+ if(m){document.getElementById('rot').value=m[1];document.getElementById('cfg').hidden=false;}})();
+document.getElementById('rot').onchange=async e=>{document.getElementById('st').textContent=await cmd('ROTATE '+e.target.value);};
 status();setInterval(status,2000);
 </script></body></html>)HTML";
 

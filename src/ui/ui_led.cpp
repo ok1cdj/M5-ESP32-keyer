@@ -24,6 +24,12 @@ void off() { M5.Led.setAllColor(0, 0, 0); }
 
 }  // namespace
 
+bool hasDisplay() { return false; }
+
+void setRotation(uint8_t) {}
+
+uint8_t rotation() { return 0; }
+
 void begin() {
     M5.Led.setBrightness(BRIGHTNESS);
     off();
