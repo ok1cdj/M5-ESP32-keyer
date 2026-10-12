@@ -53,6 +53,8 @@ jobs:
           rm -rf _site
           mkdir -p _site/firmware
           cp docs/*.html docs/manifest-*.json docs/CNAME _site/
+          # Photos for the build guide (build.html), once there are any.
+          if [ -d docs/img ]; then cp -r docs/img _site/; fi
           gh release download "$TAG" --pattern 'keyer-*.factory.bin' --dir _site/firmware
 
           # Stamp the released version into the published manifests.
