@@ -398,6 +398,12 @@
       h.lang = l;
       document.querySelectorAll('[data-lang]').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.lang === l)); });
       document.title = l === 'cs' ? 'Postav si klíčovač' : 'Build the CW keyer';
+      // Links between the keyer pages keep the language.
+      document.querySelectorAll('a[href^="index.html"], a[href^="build.html"]').forEach(function(a){
+        var u = new URL(a.getAttribute('href'), location.href);
+        u.searchParams.set('lang', l);
+        a.setAttribute('href', u.pathname.split('/').pop() + u.search + u.hash);
+      });
     }
     document.querySelectorAll('[data-lang]').forEach(function(b){ b.addEventListener('click', function(){ setLang(b.dataset.lang); }); });
     setLang(h.lang);

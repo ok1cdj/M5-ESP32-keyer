@@ -141,22 +141,50 @@
     --esp-tools-button-border-radius: 6px;
     display:block;
   }
+  /* One language at a time (?lang=, the browser's, or the EN / CS switch). */
+  html[lang='cs'] body [lang='en'], html[lang='en'] body [lang='cs']{display:none !important;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 12px;}
+  .topbar .eyebrow{margin:0;}
+  .seg{display:flex;gap:6px;}
+  .seg .btn{padding:6px 12px;font-size:13px;}
+  .seg .btn[aria-pressed='true']{background:var(--brass);color:var(--ink);border-color:var(--brass);}
 </style>
+<script>
+  // Before the first paint: the language.
+  (function(){
+    var l = new URLSearchParams(location.search).get('lang') || (navigator.language || 'en').slice(0, 2);
+    document.documentElement.lang = l === 'cs' || l === 'sk' ? 'cs' : 'en';
+  })();
+  /** The text in the page's language. */
+  function T(en, cs){ return document.documentElement.lang === 'cs' ? cs : en; }
+</script>
 </head>
 <body>
 
-  <p class="eyebrow">OK1CDJ / M5-ESP32-keyer</p>
+  <div class="topbar">
+    <p class="eyebrow">OK1CDJ / M5-ESP32-keyer</p>
+    <div class="seg" role="group" aria-label="Language">
+      <button class="btn" type="button" data-lang="en">EN</button>
+      <button class="btn" type="button" data-lang="cs">CS</button>
+    </div>
+  </div>
 
   <header class="hero">
-    <h1>Install CW keyer firmware</h1>
-    <p class="lede">CW keyer for the M5Stack Atom family. Send it text over Bluetooth LE, HTTP or cwdaemon and it keys the radio through an optocoupler or a MOSFET. Flash it straight from this page, no IDE and no drivers needed.</p>
+    <h1><span lang="en">Install CW keyer firmware</span><span lang="cs">Nahraj firmware klíčovače</span></h1>
+    <p class="lede">
+      <span lang="en">CW keyer for the M5Stack Atom family. Send it text over Bluetooth LE, HTTP or cwdaemon and it keys the radio through an optocoupler or a MOSFET; with an Icom it also reads the frequency over CI-V. Flash it straight from this page, no IDE and no drivers needed.</span>
+      <span lang="cs">CW klíčovač pro desky M5Stack Atom. Pošli mu text přes Bluetooth LE, HTTP nebo cwdaemon a on klíčuje rádio přes optočlen nebo MOSFET; s Icomem čte přes CI-V i kmitočet. Firmware nahraješ přímo z téhle stránky, bez IDE a bez ovladačů.</span>
+    </p>
     <div class="badges">
       <span class="badge">Atom Lite</span>
       <span class="badge">AtomS3 Lite</span>
       <span class="badge">AtomS3</span>
       <span class="badge" id="fw-version">firmware &mdash;</span>
     </div>
-    <p style="margin:0 0 4px;"><a href="build.html">Build your own keyer (parts, schematics) &rarr;</a> &middot; <a href="https://github.com/ok1cdj/M5-ESP32-keyer#readme">Read the manual &rarr;</a></p>
+    <p style="margin:0 0 4px;">
+      <a href="build.html"><span lang="en">Build your own keyer (parts, schematics)</span><span lang="cs">Postav si klíčovač (součástky, schémata)</span> &rarr;</a> &middot;
+      <a href="https://github.com/ok1cdj/M5-ESP32-keyer#readme"><span lang="en">Read the manual</span><span lang="cs">Návod (anglicky)</span> &rarr;</a>
+    </p>
   </header>
 
   <div class="morse-wrap"><div id="morse-mount"></div></div>
@@ -164,102 +192,113 @@
 
   <main class="grid">
     <section class="panel checklist">
-      <h2>Before you connect</h2>
+      <h2><span lang="en">Before you connect</span><span lang="cs">Než připojíš</span></h2>
       <ul>
-        <li><strong>Browser</strong>: Chrome or Edge on a desktop or laptop. The flasher uses Web Serial, which Safari, Firefox and phones or tablets don't support.</li>
-        <li><strong>Cable</strong>: a USB-C cable that carries data, not a charge-only one.</li>
-        <li><strong>AtomS3 / AtomS3 Lite</strong>: enter bootloader mode first. Hold the reset button on the side for about 2 seconds, until the green LED inside lights up.</li>
-        <li><strong>Atom Lite</strong>: no button needed. The USB bridge resets the board by itself.</li>
+        <li lang="en"><strong>Browser</strong>: Chrome or Edge on a desktop or laptop. The flasher uses Web Serial, which Safari, Firefox and phones or tablets don't support.</li>
+        <li lang="cs"><strong>Prohlížeč</strong>: Chrome nebo Edge na počítači. Flasher používá Web Serial, který Safari, Firefox ani telefony a tablety neumí.</li>
+        <li lang="en"><strong>Cable</strong>: a USB-C cable that carries data, not a charge-only one.</li>
+        <li lang="cs"><strong>Kabel</strong>: USB-C kabel, který přenáší data, ne jen nabíjecí.</li>
+        <li lang="en"><strong>AtomS3 / AtomS3 Lite</strong>: enter bootloader mode first. Hold the reset button on the side for about 2 seconds, until the green LED inside lights up.</li>
+        <li lang="cs"><strong>AtomS3 / AtomS3 Lite</strong>: nejdřív přepni do bootloaderu. Podrž tlačítko reset na boku asi 2 sekundy, dokud se uvnitř nerozsvítí zelená LED.</li>
+        <li lang="en"><strong>Atom Lite</strong>: no button needed. The USB bridge resets the board by itself.</li>
+        <li lang="cs"><strong>Atom Lite</strong>: tlačítko netřeba. USB převodník desku resetuje sám.</li>
       </ul>
     </section>
 
     <div>
       <section class="panel install">
-        <h2>Connect &amp; flash</h2>
+        <h2><span lang="en">Connect &amp; flash</span><span lang="cs">Připoj a nahraj</span></h2>
         <h3>Atom Lite / AtomS3 Lite</h3>
         <esp-web-install-button manifest="manifest-lite.json">
-          <button slot="activate" class="install-btn">Connect Atom Lite / AtomS3 Lite</button>
-          <span slot="unsupported" class="notice">This browser can't flash over USB. Open this page in Chrome or Edge on a computer.</span>
-          <span slot="not-allowed" class="notice">The browser allows a USB connection only when this page is loaded over HTTPS.</span>
+          <button slot="activate" class="install-btn"><span lang="en">Connect Atom Lite / AtomS3 Lite</span><span lang="cs">Připojit Atom Lite / AtomS3 Lite</span></button>
+          <span slot="unsupported" class="notice"><span lang="en">This browser can't flash over USB. Open this page in Chrome or Edge on a computer.</span><span lang="cs">Tento prohlížeč neumí nahrávat přes USB. Otevři stránku v Chrome nebo Edge na počítači.</span></span>
+          <span slot="not-allowed" class="notice"><span lang="en">The browser allows a USB connection only when this page is loaded over HTTPS.</span><span lang="cs">Prohlížeč povolí USB jen u stránky načtené přes HTTPS.</span></span>
         </esp-web-install-button>
-        <p class="hint">The flasher detects the chip (ESP32 or ESP32-S3) and writes the matching build.</p>
+        <p class="hint"><span lang="en">The flasher detects the chip (ESP32 or ESP32-S3) and writes the matching build.</span><span lang="cs">Flasher pozná čip (ESP32 nebo ESP32-S3) a nahraje odpovídající build.</span></p>
       </section>
       <section class="panel install" style="margin-top:18px;">
-        <h3>AtomS3 (with display)</h3>
+        <h3><span lang="en">AtomS3 (with display)</span><span lang="cs">AtomS3 (s displejem)</span></h3>
         <esp-web-install-button manifest="manifest-atoms3.json">
-          <button slot="activate" class="install-btn">Connect AtomS3</button>
-          <span slot="unsupported" class="notice">This browser can't flash over USB. Open this page in Chrome or Edge on a computer.</span>
-          <span slot="not-allowed" class="notice">The browser allows a USB connection only when this page is loaded over HTTPS.</span>
+          <button slot="activate" class="install-btn"><span lang="en">Connect AtomS3</span><span lang="cs">Připojit AtomS3</span></button>
+          <span slot="unsupported" class="notice"><span lang="en">This browser can't flash over USB. Open this page in Chrome or Edge on a computer.</span><span lang="cs">Tento prohlížeč neumí nahrávat přes USB. Otevři stránku v Chrome nebo Edge na počítači.</span></span>
+          <span slot="not-allowed" class="notice"><span lang="en">The browser allows a USB connection only when this page is loaded over HTTPS.</span><span lang="cs">Prohlížeč povolí USB jen u stránky načtené přes HTTPS.</span></span>
         </esp-web-install-button>
-        <p class="hint">AtomS3 has the same chip as AtomS3 Lite, so the flasher can't tell the two apart. Use this button only for the AtomS3 with the screen.</p>
+        <p class="hint"><span lang="en">AtomS3 has the same chip as AtomS3 Lite, so the flasher can't tell the two apart. Use this button only for the AtomS3 with the screen.</span><span lang="cs">AtomS3 má stejný čip jako AtomS3 Lite, takže je flasher nerozliší. Toto tlačítko použij jen pro AtomS3 s displejem.</span></p>
       </section>
     </div>
   </main>
 
   <section class="panel steps">
-    <h2>After flashing</h2>
+    <h2><span lang="en">After flashing</span><span lang="cs">Po nahrání</span></h2>
     <ol>
-      <li>The board starts in BLE mode, and the LED shows blue for 2 seconds.</li>
-      <li>Connect with kQSO or nRF Connect to <code>keyer-XXXX</code> and send <code>SEND CQ CQ DE ...</code>.</li>
-      <li>To switch mode, hold the button while powering on. When the LED shows the mode you want (blue BLE, green HTTP, yellow CWD), release it.</li>
-      <li>For the HTTP and CWD modes, set up Wi-Fi <a href="#configure">below</a>. The keyer then appears on the network as <code>keyer-XXXX.local</code>.</li>
+      <li lang="en">The board starts in BLE mode, and the LED shows blue for 2 seconds.</li>
+      <li lang="cs">Deska se spustí v režimu BLE a LED na 2 sekundy svítí modře.</li>
+      <li lang="en">Connect with kQSO or nRF Connect to <code>keyer-XXXX</code> and send <code>SEND CQ CQ DE ...</code>.</li>
+      <li lang="cs">Připoj se z kQSO nebo nRF Connect ke <code>keyer-XXXX</code> a pošli <code>SEND CQ CQ DE ...</code>.</li>
+      <li lang="en">To switch mode, hold the button while powering on. When the LED shows the mode you want (blue BLE, green HTTP, yellow CWD), release it.</li>
+      <li lang="cs">Režim přepneš tak, že při zapnutí držíš tlačítko. Až LED ukáže požadovaný režim (modrá BLE, zelená HTTP, žlutá CWD), pusť ho.</li>
+      <li lang="en">For the HTTP and CWD modes, set up Wi-Fi <a href="#configure">below</a>. The keyer then appears on the network as <code>keyer-XXXX.local</code>.</li>
+      <li lang="cs">Pro režimy HTTP a CWD nastav Wi-Fi <a href="#configure">níže</a>. Klíčovač se pak v síti objeví jako <code>keyer-XXXX.local</code>.</li>
     </ol>
   </section>
 
   <section class="panel config" id="configure">
-    <h2>Configure over Bluetooth</h2>
-    <p class="hint" style="margin-top:0;">The keyer must be in BLE mode (blue LED at start). This part works in Chrome and Edge on a desktop and in Chrome on Android. On Linux you may have to enable Web Bluetooth at <code>chrome://flags/#enable-web-bluetooth</code>. iPhone and iPad don't have Web Bluetooth: use nRF Connect there.</p>
-    <span class="notice" id="ble-unsupported" style="margin-bottom:12px;" hidden>This browser has no Web Bluetooth. Open this page in Chrome or Edge on a computer, or in Chrome on Android.</span>
+    <h2><span lang="en">Configure over Bluetooth</span><span lang="cs">Nastavení přes Bluetooth</span></h2>
+    <p class="hint" style="margin-top:0;">
+      <span lang="en">The keyer must be in BLE mode (blue LED at start). This part works in Chrome and Edge on a desktop and in Chrome on Android. On Linux you may have to enable Web Bluetooth at <code>chrome://flags/#enable-web-bluetooth</code>. iPhone and iPad don't have Web Bluetooth: use nRF Connect there.</span>
+      <span lang="cs">Klíčovač musí být v režimu BLE (při startu modrá LED). Tahle část funguje v Chrome a Edge na počítači a v Chrome na Androidu. Na Linuxu může být potřeba zapnout Web Bluetooth v <code>chrome://flags/#enable-web-bluetooth</code>. iPhone a iPad Web Bluetooth nemají: tam použij nRF Connect.</span>
+    </p>
+    <span class="notice" id="ble-unsupported" style="margin-bottom:12px;" hidden><span lang="en">This browser has no Web Bluetooth. Open this page in Chrome or Edge on a computer, or in Chrome on Android.</span><span lang="cs">Tento prohlížeč nemá Web Bluetooth. Otevři stránku v Chrome nebo Edge na počítači, nebo v Chrome na Androidu.</span></span>
 
     <div class="row">
-      <button class="btn primary" id="ble-connect">Connect keyer</button>
-      <button class="btn" id="ble-disconnect" disabled>Disconnect</button>
-      <span class="dev-status" id="ble-status">not connected</span>
+      <button class="btn primary" id="ble-connect"><span lang="en">Connect keyer</span><span lang="cs">Připojit klíčovač</span></button>
+      <button class="btn" id="ble-disconnect" disabled><span lang="en">Disconnect</span><span lang="cs">Odpojit</span></button>
+      <span class="dev-status" id="ble-status"></span>
     </div>
 
     <fieldset id="ble-controls" disabled>
-      <legend>Wi-Fi (for HTTP and CWD mode)</legend>
+      <legend><span lang="en">Wi-Fi (for HTTP and CWD mode)</span><span lang="cs">Wi-Fi (pro režim HTTP a CWD)</span></legend>
       <div class="row">
-        <label>SSID<input id="wifi-ssid" autocomplete="off" spellcheck="false" maxlength="32"></label>
-        <label>Password<input id="wifi-pass" type="password" autocomplete="off" maxlength="64" placeholder="empty = open network"></label>
+        <label><span>SSID</span><input id="wifi-ssid" autocomplete="off" spellcheck="false" maxlength="32"></label>
+        <label><span><span lang="en">Password</span><span lang="cs">Heslo</span></span><input id="wifi-pass" type="password" autocomplete="off" maxlength="64" data-ph-en="empty = open network" data-ph-cs="prázdné = otevřená síť"></label>
       </div>
       <div class="row">
-        <label>API key (optional)<input id="api-key" autocomplete="off" spellcheck="false" maxlength="64" placeholder="empty = no authentication"></label>
+        <label><span><span lang="en">API key (optional)</span><span lang="cs">API klíč (volitelně)</span></span><input id="api-key" autocomplete="off" spellcheck="false" maxlength="64" data-ph-en="empty = no authentication" data-ph-cs="prázdné = bez ověření"></label>
       </div>
       <div class="row">
-        <button class="btn" id="save-wifi">Save Wi-Fi</button>
-        <button class="btn" id="save-key">Save API key</button>
+        <button class="btn" id="save-wifi"><span lang="en">Save Wi-Fi</span><span lang="cs">Uložit Wi-Fi</span></button>
+        <button class="btn" id="save-key"><span lang="en">Save API key</span><span lang="cs">Uložit API klíč</span></button>
       </div>
     </fieldset>
 
     <fieldset id="ble-mode" disabled>
-      <legend>Mode</legend>
+      <legend><span lang="en">Mode</span><span lang="cs">Režim</span></legend>
       <div class="row">
-        <label style="flex:0 1 200px;">Mode after restart
+        <label style="flex:0 1 200px;"><span><span lang="en">Mode after restart</span><span lang="cs">Režim po restartu</span></span>
           <select id="mode">
-            <option value="BLE">BLE (blue)</option>
-            <option value="HTTP" selected>HTTP (green)</option>
-            <option value="CWD">CWD / cwdaemon (yellow)</option>
+            <option value="BLE" data-en="BLE (blue)" data-cs="BLE (modrá)">BLE (blue)</option>
+            <option value="HTTP" selected data-en="HTTP (green)" data-cs="HTTP (zelená)">HTTP (green)</option>
+            <option value="CWD" data-en="CWD / cwdaemon (yellow)" data-cs="CWD / cwdaemon (žlutá)">CWD / cwdaemon (yellow)</option>
           </select>
         </label>
-        <button class="btn" id="save-mode" style="align-self:flex-end;">Save mode &amp; restart</button>
+        <button class="btn" id="save-mode" style="align-self:flex-end;"><span lang="en">Save mode &amp; restart</span><span lang="cs">Uložit režim a restartovat</span></button>
       </div>
-      <p class="hint" style="margin:0;">To get back to BLE mode later, hold the button while powering on, and release it when the LED is blue.</p>
+      <p class="hint" style="margin:0;"><span lang="en">To get back to BLE mode later, hold the button while powering on, and release it when the LED is blue.</span><span lang="cs">Zpět do režimu BLE se dostaneš tak, že při zapnutí držíš tlačítko a pustíš ho, až LED svítí modře.</span></p>
     </fieldset>
 
     <fieldset id="ble-radio" disabled hidden>
-      <legend>Radio (Icom CI-V)</legend>
+      <legend><span lang="en">Radio (Icom CI-V)</span><span lang="cs">Rádio (Icom CI-V)</span></legend>
       <p class="freq" id="freq">&mdash;</p>
       <p class="hint" style="margin:0 0 12px;" id="civ-link"></p>
       <div class="row">
-        <label style="flex:0 1 200px;">CI-V
+        <label style="flex:0 1 200px;"><span>CI-V</span>
           <select id="civ-mode">
-            <option value="AUTO">Auto (find rate and address)</option>
-            <option value="FIXED">Fixed rate and address</option>
-            <option value="OFF">Off</option>
+            <option value="AUTO" data-en="Auto (find rate and address)" data-cs="Automaticky (najde rychlost a adresu)">Auto (find rate and address)</option>
+            <option value="FIXED" data-en="Fixed rate and address" data-cs="Pevná rychlost a adresa">Fixed rate and address</option>
+            <option value="OFF" data-en="Off" data-cs="Vypnuto">Off</option>
           </select>
         </label>
-        <label style="flex:0 1 120px;" class="civ-fixed">Rate
+        <label style="flex:0 1 120px;" class="civ-fixed"><span><span lang="en">Rate</span><span lang="cs">Rychlost</span></span>
           <select id="civ-baud">
             <option>19200</option>
             <option>9600</option>
@@ -267,16 +306,16 @@
             <option>1200</option>
           </select>
         </label>
-        <label style="flex:0 1 120px;" class="civ-fixed">Address (hex)<input id="civ-addr" maxlength="2" spellcheck="false" placeholder="94"></label>
-        <button class="btn" id="save-civ" style="align-self:flex-end;">Save CI-V</button>
+        <label style="flex:0 1 120px;" class="civ-fixed"><span><span lang="en">Address (hex)</span><span lang="cs">Adresa (hex)</span></span><input id="civ-addr" maxlength="2" spellcheck="false" placeholder="94"></label>
+        <button class="btn" id="save-civ" style="align-self:flex-end;"><span lang="en">Save CI-V</span><span lang="cs">Uložit CI-V</span></button>
       </div>
-      <p class="hint" style="margin:0;">Auto finds the radio by itself; turn the VFO knob once if its address was changed. Use Fixed only for a radio with a changed address and CI-V Transceive off.</p>
+      <p class="hint" style="margin:0;"><span lang="en">Auto finds the radio by itself; turn the VFO knob once if its address was changed. Use Fixed only for a radio with a changed address and CI-V Transceive off.</span><span lang="cs">Automaticky najde rádio samo; má-li rádio změněnou adresu, jednou otoč knoflíkem VFO. Pevné nastavení použij jen pro rádio se změněnou adresou a vypnutým CI-V Transceive.</span></p>
     </fieldset>
 
     <fieldset id="ble-display" disabled hidden>
-      <legend>Display (AtomS3)</legend>
+      <legend><span lang="en">Display (AtomS3)</span><span lang="cs">Displej (AtomS3)</span></legend>
       <div class="row">
-        <label style="flex:0 1 200px;">Rotation
+        <label style="flex:0 1 200px;"><span><span lang="en">Rotation</span><span lang="cs">Otočení</span></span>
           <select id="rotation">
             <option value="0">0°</option>
             <option value="90">90°</option>
@@ -284,20 +323,20 @@
             <option value="270">270°</option>
           </select>
         </label>
-        <button class="btn" id="save-rotation" style="align-self:flex-end;">Rotate</button>
+        <button class="btn" id="save-rotation" style="align-self:flex-end;"><span lang="en">Rotate</span><span lang="cs">Otočit</span></button>
       </div>
     </fieldset>
 
     <fieldset id="ble-test" disabled>
       <legend>Test</legend>
       <div class="row">
-        <label>Text<input id="send-text" value="CQ CQ DE" spellcheck="false" maxlength="250"></label>
-        <label style="flex:0 1 90px;">WPM<input id="wpm" type="number" min="5" max="50" value="20"></label>
+        <label><span>Text</span><input id="send-text" value="CQ CQ DE" spellcheck="false" maxlength="250"></label>
+        <label style="flex:0 1 90px;"><span>WPM</span><input id="wpm" type="number" min="5" max="50" value="20"></label>
       </div>
       <div class="row">
-        <button class="btn" id="send">Send</button>
+        <button class="btn" id="send"><span lang="en">Send</span><span lang="cs">Odeslat</span></button>
         <button class="btn danger" id="stop">STOP</button>
-        <button class="btn" id="set-wpm">Set WPM</button>
+        <button class="btn" id="set-wpm"><span lang="en">Set WPM</span><span lang="cs">Nastavit WPM</span></button>
       </div>
     </fieldset>
 
@@ -311,13 +350,13 @@
       </a>
     </div>
     <div class="footer-links">
-      <a href="https://github.com/ok1cdj/M5-ESP32-keyer" target="_blank" rel="noopener">This project on GitHub</a>
+      <a href="https://github.com/ok1cdj/M5-ESP32-keyer" target="_blank" rel="noopener"><span lang="en">This project on GitHub</span><span lang="cs">Projekt na GitHubu</span></a>
       <span>&middot;</span>
-      <a href="build.html">Build it</a>
+      <a href="build.html"><span lang="en">Build it</span><span lang="cs">Stavba</span></a>
       <span>&middot;</span>
-      <a href="https://github.com/ok1cdj/M5-ESP32-keyer/blob/master/PROTOCOL.md" target="_blank" rel="noopener">Protocol</a>
+      <a href="https://github.com/ok1cdj/M5-ESP32-keyer/blob/master/PROTOCOL.md" target="_blank" rel="noopener"><span lang="en">Protocol</span><span lang="cs">Protokol</span></a>
       <span>&middot;</span>
-      <a href="https://apps.ok1cdj.com" target="_blank" rel="noopener">More apps by OK1CDJ</a>
+      <a href="https://apps.ok1cdj.com" target="_blank" rel="noopener"><span lang="en">More apps by OK1CDJ</span><span lang="cs">Další aplikace OK1CDJ</span></a>
     </div>
     <div class="footer-copy">&copy; 2026 Ondrej Kolonicny (OK1CDJ) &middot; GPL-3.0 License</div>
   </footer>
@@ -385,7 +424,7 @@
       if(el && m.version) el.textContent = 'firmware v' + m.version;
     }).catch(function(){
       var el = document.getElementById('fw-version');
-      if(el) el.textContent = 'version unknown';
+      if(el) el.textContent = T('version unknown', 'verze neznámá');
     });
   })();
   </script>
@@ -411,19 +450,27 @@
       el.scrollTop = el.scrollHeight;
     }
 
+    var linkName = null; // connected keyer, for repainting the status in the other language
+
+    function paintStatus(){
+      $('ble-status').innerHTML = linkName !== null ? T('connected to ', 'připojeno k ') + '<strong></strong>' : T('not connected', 'nepřipojeno');
+      if(linkName !== null) $('ble-status').querySelector('strong').textContent = linkName;
+    }
+
     function setConnected(on, name){
       $('ble-connect').disabled = on;
       $('ble-disconnect').disabled = !on;
       ['ble-controls','ble-mode','ble-radio','ble-display','ble-test'].forEach(function(id){ $(id).disabled = !on; });
-      $('ble-status').innerHTML = on ? 'connected to <strong></strong>' : 'not connected';
-      if(on) $('ble-status').querySelector('strong').textContent = name;
-      else { $('ble-display').hidden = true; $('ble-radio').hidden = true; $('freq').innerHTML = '&mdash;'; haveRig = false; }
+      linkName = on ? name : null;
+      paintStatus();
+      if(!on){ $('ble-display').hidden = true; $('ble-radio').hidden = true; $('freq').innerHTML = '&mdash;'; haveRig = false; }
     }
+    window.keyerRepaint = function(){ paintStatus(); if(linkName !== null) refreshCiv().catch(function(){}); };
 
     // FREQ <Hz> <mode> / FREQ NONE, sent by the keyer after FREQ ON.
     function showFreq(line){
       var m = line.match(/^FREQ (\d+) (\S+)/);
-      $('freq').textContent = m ? (m[1] / 1e6).toFixed(5) + ' MHz  ' + m[2] : 'no radio';
+      $('freq').textContent = m ? (m[1] / 1e6).toFixed(5) + ' MHz  ' + m[2] : T('no radio', 'žádné rádio');
       // Rig found or lost: the link line changes too.
       if(!!m !== haveRig){ haveRig = !!m; refreshCiv().catch(function(){}); }
     }
@@ -438,9 +485,9 @@
       var resp = await command('CIV');
       var m = resp.match(/^CIV (AUTO|FIXED|OFF)(?: (\S+) (\S+))?$/);
       if(!m) return false;
-      $('civ-link').textContent = m[1] === 'OFF' ? 'CI-V is off'
-        : m[2] === '-' ? 'looking for the radio…'
-        : 'radio ' + m[3] + 'h at ' + m[2] + ' Bd' + (m[1] === 'FIXED' ? ' (fixed)' : '');
+      $('civ-link').textContent = m[1] === 'OFF' ? T('CI-V is off', 'CI-V je vypnuté')
+        : m[2] === '-' ? T('looking for the radio…', 'hledám rádio…')
+        : T('radio ', 'rádio ') + m[3] + T('h at ', 'h, ') + m[2] + ' Bd' + (m[1] === 'FIXED' ? T(' (fixed)', ' (pevně)') : '');
       return m;
     }
 
@@ -466,7 +513,7 @@
         return new Promise(function(resolve, reject){
           var timer = setTimeout(function(){
             var i = waiting.indexOf(done); if(i >= 0) waiting.splice(i, 1);
-            reject(new Error('no response'));
+            reject(new Error(T('no response', 'bez odpovědi')));
           }, 3000);
           function done(resp){ clearTimeout(timer); resolve(resp); }
           waiting.push(done);
@@ -498,7 +545,7 @@
       });
       device.addEventListener('gattserverdisconnected', function(){
         setConnected(false); rx = null; rxBuf = ''; waiting = [];
-        log('disconnected');
+        log(T('disconnected', 'odpojeno'));
       });
       var server = await device.gatt.connect();
       var nus = await server.getPrimaryService(NUS);
@@ -507,7 +554,7 @@
       tx.addEventListener('characteristicvaluechanged', onNotify);
       await tx.startNotifications();
       setConnected(true, device.name || 'keyer');
-      log('connected to ' + (device.name || 'keyer'));
+      log(T('connected to ', 'připojeno k ') + (device.name || 'keyer'));
       await command('VER');
       var st = await command('STATUS');
       var m = st.match(/WPM (\d+)/); if(m) $('wpm').value = m[1];
@@ -526,7 +573,7 @@
         var bas = await server.getPrimaryService('battery_service');
         var lvl = await bas.getCharacteristic('battery_level');
         var v = await lvl.readValue();
-        log('  battery ' + v.getUint8(0) + ' %', 'rx');
+        log(T('  battery ', '  baterie ') + v.getUint8(0) + ' %', 'rx');
       } catch(e){ /* no battery service */ }
     }
 
@@ -541,22 +588,22 @@
 
     $('save-wifi').addEventListener('click', guard(async function(){
       var ssid = $('wifi-ssid').value, pass = $('wifi-pass').value;
-      if(!ssid){ log('! SSID is empty', 'err'); return; }
-      if(/[\t\n]/.test(ssid + pass)){ log('! SSID and password must not contain tabs or line breaks', 'err'); return; }
-      if(('WIFI ' + ssid + '\t' + pass).length > 256){ log('! SSID and password are too long', 'err'); return; }
-      await command('WIFI ' + ssid + '\t' + pass, 'WIFI ' + ssid + ' <password>');
+      if(!ssid){ log(T('! SSID is empty', '! SSID je prázdné'), 'err'); return; }
+      if(/[\t\n]/.test(ssid + pass)){ log(T('! SSID and password must not contain tabs or line breaks', '! SSID a heslo nesmí obsahovat tabulátor ani konec řádku'), 'err'); return; }
+      if(('WIFI ' + ssid + '\t' + pass).length > 256){ log(T('! SSID and password are too long', '! SSID a heslo jsou příliš dlouhé'), 'err'); return; }
+      await command('WIFI ' + ssid + '\t' + pass, 'WIFI ' + ssid + T(' <password>', ' <heslo>'));
     }));
 
     $('save-key').addEventListener('click', guard(async function(){
       var key = $('api-key').value;
-      if(/\s/.test(key)){ log('! API key must not contain spaces', 'err'); return; }
-      await command(key ? 'APIKEY ' + key : 'APIKEY', key ? 'APIKEY <key>' : 'APIKEY (off)');
+      if(/\s/.test(key)){ log(T('! API key must not contain spaces', '! API klíč nesmí obsahovat mezery'), 'err'); return; }
+      await command(key ? 'APIKEY ' + key : 'APIKEY', key ? T('APIKEY <key>', 'APIKEY <klíč>') : T('APIKEY (off)', 'APIKEY (vypnuto)'));
     }));
 
     $('save-mode').addEventListener('click', guard(async function(){
       var mode = $('mode').value;
       var resp = await command('MODE ' + mode);
-      if(resp === 'OK') log('keyer restarts in ' + mode + ' mode' + (mode === 'BLE' ? '' : ', look for keyer-XXXX.local on your network'));
+      if(resp === 'OK') log(T('keyer restarts in ' + mode + ' mode', 'klíčovač se restartuje v režimu ' + mode) + (mode === 'BLE' ? '' : T(', look for keyer-XXXX.local on your network', ', hledej keyer-XXXX.local ve své síti')));
     }));
 
     $('civ-mode').addEventListener('change', showCivFixed);
@@ -564,7 +611,7 @@
       var mode = $('civ-mode').value, line = 'CIV ' + mode;
       if(mode === 'FIXED'){
         var addr = $('civ-addr').value.trim().toUpperCase();
-        if(!/^[0-9A-F]{1,2}$/.test(addr)){ log('! address must be hex, for example 94', 'err'); return; }
+        if(!/^[0-9A-F]{1,2}$/.test(addr)){ log(T('! address must be hex, for example 94', '! adresa musí být hex, například 94'), 'err'); return; }
         line = 'CIV ' + $('civ-baud').value + ' ' + addr;
       }
       if(await command(line) === 'OK') await refreshCiv();
@@ -578,5 +625,27 @@
   })();
   </script>
 
+  <script>
+  // EN / CS: the switch, select options and placeholders, and the texts the scripts write.
+  (function(){
+    var h = document.documentElement;
+    function setLang(l){
+      h.lang = l;
+      document.querySelectorAll('[data-lang]').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.lang === l)); });
+      document.querySelectorAll('option[data-en]').forEach(function(o){ o.textContent = o.dataset[l]; });
+      document.querySelectorAll('[data-ph-en]').forEach(function(i){ i.placeholder = i.dataset[l === 'cs' ? 'phCs' : 'phEn']; });
+      document.title = T('Install CW keyer firmware', 'Nahraj firmware klíčovače');
+      // Links between the keyer pages keep the language.
+      document.querySelectorAll('a[href^="index.html"], a[href^="build.html"]').forEach(function(a){
+        var u = new URL(a.getAttribute('href'), location.href);
+        u.searchParams.set('lang', l);
+        a.setAttribute('href', u.pathname.split('/').pop() + u.search + u.hash);
+      });
+      if(window.keyerRepaint) window.keyerRepaint();
+    }
+    document.querySelectorAll('[data-lang]').forEach(function(b){ b.addEventListener('click', function(){ setLang(b.dataset.lang); }); });
+    setLang(h.lang);
+  })();
+  </script>
 </body>
 </html>
