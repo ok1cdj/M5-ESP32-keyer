@@ -18,6 +18,7 @@ constexpr uint32_t RESTART_DELAY_MS = 300;
 volatile uint32_t restartAt = 0;
 std::atomic<bool> watch{false};
 std::atomic<bool> freqRequest{false};
+std::atomic<bool> raw{false};
 
 }  // namespace
 
@@ -91,8 +92,16 @@ bool freqWatch() { return watch; }
 void resetSession() {
     watch = false;
     freqRequest = false;
+    raw = false;
     radio::setTap(false);
 }
+
+void setRawCiv(bool on) {
+    raw = on;
+    radio::setTap(on);
+}
+
+bool rawCiv() { return raw; }
 
 bool takeFreqRequest() { return freqRequest.exchange(false); }
 

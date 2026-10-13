@@ -52,11 +52,16 @@ void reportFrequency() {
     ui::setRadio(civ::formatDisplay(st.valid, st.hz, st.mode));
 }
 
-// CIVRX ON: every frame from the radio to the client, as it came.
+// CIVRX ON: every frame from the radio to the client, as it came; binary
+// to a binary CI-V client.
 void forwardCiv() {
     uint8_t b[civ::Frame::MAX_BYTES];
     size_t n;
-    while (radio::takeTapped(b, n)) notifyClient(("CIVRX " + civ::toHex(b, n)).c_str());
+    while (radio::takeTapped(b, n)) {
+        if (!active) continue;
+        if (commands::rawCiv()) active->notifyRaw(b, n);
+        else active->notify(("CIVRX " + civ::toHex(b, n)).c_str());
+    }
 }
 
 }  // namespace

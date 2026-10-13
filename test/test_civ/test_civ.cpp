@@ -153,6 +153,26 @@ void test_tunnel_helpers() {
     TEST_ASSERT_FALSE(addressFrame(t, m, 0x58));
 }
 
+// Binary CI-V client (OrbitDeck): one BLE write carries several frames, maybe
+// after junk; each one comes out of the parser and back on the wire unchanged.
+void test_binary_client_write() {
+    FrameParser p;
+    auto f = feedAll(p, {0x0D, 0x0A,                                    // junk
+                         0xFE, 0xFE, 0x60, 0xE0, 0x07, 0xD0, 0xFD,      // select SUB
+                         0xFE, 0xFE, 0x60, 0xE0, 0x05,                  // 435.700.000 Hz
+                         0x00, 0x00, 0x70, 0x35, 0x04, 0xFD,
+                         0xFE, 0xFE, 0x60, 0xE0, 0x1A, 0x07, 0x01, 0xFD});  // sat mode on
+    TEST_ASSERT_EQUAL(3, (int)f.size());
+    uint8_t b[Frame::MAX_BYTES];
+    size_t n = encodeFrame(f[0], b);
+    TEST_ASSERT_EQUAL_STRING("FEFE60E007D0FD", toHex(b, n).c_str());
+    n = encodeFrame(f[1], b);
+    TEST_ASSERT_EQUAL_STRING("FEFE60E0050000703504FD", toHex(b, n).c_str());
+    n = encodeFrame(f[2], b);
+    TEST_ASSERT_EQUAL_STRING("FEFE60E01A0701FD", toHex(b, n).c_str());
+    TEST_ASSERT_TRUE(addressFrame(b, n, 0x60));
+}
+
 void test_link_locks_on_broadcast_and_queries() {
     Link l;
     l.configure(Config{}, 0);
@@ -316,6 +336,7 @@ int main() {
     RUN_TEST(test_decode_freq);
     RUN_TEST(test_format);
     RUN_TEST(test_tunnel_helpers);
+    RUN_TEST(test_binary_client_write);
     RUN_TEST(test_link_locks_on_broadcast_and_queries);
     RUN_TEST(test_link_ignores_own_echo_and_other_traffic);
     RUN_TEST(test_link_probes_then_steps_the_rate);

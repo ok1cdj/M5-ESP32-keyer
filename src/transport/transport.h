@@ -1,6 +1,9 @@
 // A transport translates its input into keyer commands. Exactly one runs.
 #pragma once
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include <string>
 
 namespace transport {
@@ -12,6 +15,8 @@ public:
     virtual void loop() {}
     // Asynchronous message from the keyer core (called from the keyer task).
     virtual void notify(const char* line) = 0;
+    // A CI-V frame from the radio for a binary CI-V client (BLE only).
+    virtual void notifyRaw(const uint8_t*, size_t) {}
     // Shown on the status display; empty when there is none.
     virtual std::string address() const { return std::string(); }
 };

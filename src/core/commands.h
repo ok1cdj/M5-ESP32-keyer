@@ -15,6 +15,12 @@ std::string execute(const std::string& line, proto::Mode active);
 // the asynchronous messages.
 bool freqWatch();
 void resetSession();
+
+// Binary CI-V session (OrbitDeck and other apps made for a BLE-to-CI-V
+// adapter): the connection carries raw frames both ways and no text lines.
+// Turns the CIVRX tap on; resetSession() ends it.
+void setRawCiv(bool on);
+bool rawCiv();
 // True once after FREQ ON: the current value goes out at once.
 bool takeFreqRequest();
 
