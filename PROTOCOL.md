@@ -90,6 +90,19 @@ Example, IC-706MkIIG at 58h, tune to 7.025 MHz:
 ← CIVRX FEFEE058FBFD                (the radio accepted it)
 ```
 
+## Binary CI-V (BLE)
+
+Apps made for a plain BLE-to-CI-V adapter, such as [OrbitDeck](https://github.com/prstoetzer/OrbitDeckiOS) with an [OrbitLinkS3](https://github.com/prstoetzer/OrbitLinkS3), can use the keyer in its place: they write raw CI-V frames to the NUS RX characteristic and read raw frames from TX. Needs firmware 2.2.0 or later.
+
+- A BLE connection whose **first byte is `FE`** is a binary CI-V connection until it disconnects. Text commands never start with `FE`, so text clients are not affected.
+- Every whole frame `FE FE <to> <from> <cmd> [data] FD` goes to the radio as with `CIVTX`: readdressed to the rig found and from `E0`, sent when the bus is quiet. Frames may be split across writes or several may share one write; bytes outside a frame are ignored.
+- There is no answer to a write. A frame that cannot go out (no rig found yet, a full queue of 8 frames) is dropped; the app's next update repeats it.
+- Every frame from the radio goes to the client as it came, as with `CIVRX ON`: answers to `E0`, `FB` / `FA` and Transceive broadcasts.
+- No text goes out on such a connection: no responses, no `DONE`, no `FREQ`.
+- The keyer keeps reading the frequency, so its display follows whichever band the app selected last (MAIN or SUB).
+- Only one BLE client at a time: CW from a logger and Doppler tuning from OrbitDeck do not run together.
+- Disconnecting ends the binary mode (and, as always, stops a transmission).
+
 ## Character set
 
 `A–Z 0–9 / ? . , = + -` and the space. Lower case is converted to upper case. Tabs and line breaks count as spaces.
